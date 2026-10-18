@@ -1,40 +1,99 @@
 # StudyPilot AI
 
-**Adaptive learning platform — Android + FastAPI + PostgreSQL + AI-ready services.**
+**From learning questions to an adaptive personal study system.**
 
-StudyPilot is designed as a real student product: personalized learning, curriculum navigation, quizzes, exams, revision, mistakes, notes, bookmarks, study tools, analytics, gamification and an AI tutor.
+StudyPilot AI is a native Android + FastAPI learning platform with persistent PostgreSQL data and an optional OpenAI-powered tutor/question generator. The app is designed around real student progress rather than a collection of static screens.
 
-## Current architecture
-- `android/` — Kotlin + Jetpack Compose Android client
-- `backend/` — FastAPI API and learning logic
-- `database/` — reserved for durable PostgreSQL migrations/seeds
-- `.github/workflows/` — backend CI and Android build
-- `docker-compose.yml` — local API + PostgreSQL stack
+## What is implemented
+- Native Kotlin + Jetpack Compose Android client
+- Email/password registration and login with JWT access tokens
+- Persistent users, progress, notes, bookmarks and mistakes
+- Grades 1–10 curriculum, subjects, topics and search
+- Dashboard with accuracy, XP, level, streak and mastery
+- Mastery-based recommendations and revision queue
+- Attempt recording and mistake capture
+- AI Tutor with simple/deep/exam teaching modes
+- AI quiz generation with deterministic fallback question bank
+- Multiplication tables, safe arithmetic calculator and unit conversion
+- Formula reference, planner and achievements APIs
+- Weekly learning statistics
+- Health/readiness endpoints for deployment monitoring
+- Docker/local PostgreSQL support
+- Render Blueprint for API + PostgreSQL
+- Backend pytest CI and Android debug-APK CI
+- Production API URL configurable through `STUDYPILOT_API_BASE_URL`
 
-## Core feature set
-Authentication, grade profiles, grades 1–10 curriculum, subjects, topics, search, progress tracking, accuracy analytics, study time, XP, levels, streaks, recommendations, AI tutor, explanation mode, quiz generation, difficulty selection, MCQs, explanations, notes, bookmarks, revision architecture, multiplication tables, calculator, dashboard, learning library, practice hub, flashcard-ready architecture, mock-exam-ready architecture, focus-study-ready architecture, notifications-ready architecture, profile settings, language/theme architecture, REST API, OpenAPI docs, Docker, PostgreSQL local stack, automated backend tests and Android APK CI.
+## Architecture
+```text
+Android app
+   │ HTTPS + JWT
+   ▼
+FastAPI backend ─────► OpenAI API (optional)
+   │
+   ▼
+PostgreSQL
+```
 
-## Secrets
-Never commit API keys. Configure secrets only in the runtime/deployment environment. Minimum AI configuration is `OPENAI_API_KEY` and `AI_MODEL` if a remote AI provider is enabled. `DATABASE_URL` and `JWT_SECRET` also belong only in the runtime environment.
+## Environment variables
+Never commit real secrets.
 
-## Run backend
+```text
+DATABASE_URL=postgresql+psycopg://...
+JWT_SECRET=long-random-secret
+OPENAI_API_KEY=...
+AI_MODEL=gpt-5-mini
+APP_ENV=production
+ACCESS_TOKEN_MINUTES=10080
+```
+
+`OPENAI_API_KEY` is optional: without it the tutor and quiz generator use safe built-in fallbacks. With it, the backend calls the OpenAI Responses API server-side; the key never belongs in the Android app.
+
+## Local backend
 ```bash
 cd backend
 python -m venv .venv
+# activate the environment
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-API docs: `http://127.0.0.1:8000/docs`
+API documentation: `http://127.0.0.1:8000/docs`
 
-## Run stack
-Copy `backend/.env.example` to `backend/.env`, then:
+For local SQLite, simply omit `DATABASE_URL`. For PostgreSQL, set `DATABASE_URL` before starting the API.
+
+## Render deployment
+The repository contains `render.yaml`. Connect the GitHub repository to Render and deploy the Blueprint. The Blueprint creates the FastAPI web service, connects `DATABASE_URL` to PostgreSQL, generates `JWT_SECRET`, and leaves `OPENAI_API_KEY` as a secret input.
+
+After deployment, verify:
+- `/health` returns `status: ok`
+- `/readyz` returns `status: ready`
+- `/docs` opens the FastAPI documentation
+
+## Android build
+The Android module uses Gradle 8.9 in CI and Java 17. For a local emulator the default backend is `http://10.0.2.2:8000`.
+
+For a production build, set:
+```text
+STUDYPILOT_API_BASE_URL=https://YOUR-BACKEND-URL
+```
+then run:
 ```bash
-docker compose up --build
+cd android
+gradle assembleDebug
+# or
+gradle bundleRelease
 ```
 
-## Android
-Open `android/` in Android Studio. The default emulator API URL is `http://10.0.2.2:8000`. For a physical phone, change `API_BASE_URL` in `android/app/build.gradle.kts` to the reachable backend address.
+The GitHub Actions Android workflow automatically builds and uploads the debug APK after Android source changes.
 
-## Status
-The repository now contains a real development baseline with working backend endpoints, a native Compose UI, tests, Docker configuration and CI. Production deployment, provider API keys and final device acceptance testing still need to be performed before a production release.
+## 30-day pilot
+For the first 30 days, treat the release as a controlled pilot:
+1. Keep the backend/database account secured.
+2. Monitor `/health`, Render logs and database usage.
+3. Test registration, login, dashboard, tutor, quiz, progress, notes and revision every few days.
+4. Keep AI spending limits/budgets enabled on the AI provider.
+5. Back up important PostgreSQL data before the free database period ends.
+6. Do not publish the API key or signing credentials in GitHub.
+
+## Release checklist
+Before Play Store publication, complete production signing, privacy policy, app icon/screenshots, final device testing, backend monitoring and a production database plan. The 30-day pilot should come before broad public launch.
