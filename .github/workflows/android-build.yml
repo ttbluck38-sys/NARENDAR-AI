@@ -1,5 +1,11 @@
 name: Android Build
 on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: 'Production backend URL, e.g. https://studypilot-api.onrender.com'
+        required: true
+        type: string
   push:
     paths: ['android/**']
   pull_request:
@@ -7,6 +13,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      STUDYPILOT_API_BASE_URL: ${{ inputs.api_base_url || 'http://10.0.2.2:8000' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
