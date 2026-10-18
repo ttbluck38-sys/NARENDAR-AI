@@ -1,0 +1,15 @@
+.DS_Store
+.idea/
+*.iml
+.gradle/
+/build/
+local.properties
+.env
+.env.*
+!.env.example
+__pycache__/
+.pytest_cache/
+.venv/
+*.pyc
+backend/.pytest_cache/
+android/app/build/
