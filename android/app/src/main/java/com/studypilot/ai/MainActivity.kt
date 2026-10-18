@@ -45,6 +45,7 @@ private suspend fun api(path: String, method: String = "GET", body: String? = nu
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudyPilotApp(prefs: android.content.SharedPreferences) {
     var token by remember { mutableStateOf(prefs.getString(TOKEN, null)) }
