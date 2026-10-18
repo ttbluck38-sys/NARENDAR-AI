@@ -1,12 +1,24 @@
 plugins { id("com.android.application"); id("org.jetbrains.kotlin.android"); id("org.jetbrains.kotlin.plugin.compose") }
 
-android { namespace="com.studypilot.ai"; compileSdk=35
-    defaultConfig { applicationId="com.studypilot.ai"; minSdk=23; targetSdk=35; versionCode=1; versionName="1.0.0" }
+val apiBaseUrl = System.getenv("STUDYPILOT_API_BASE_URL") ?: "http://10.0.2.2:8000"
+
+android {
+    namespace="com.studypilot.ai"
+    compileSdk=35
+    defaultConfig {
+        applicationId="com.studypilot.ai"
+        minSdk=23
+        targetSdk=35
+        versionCode=1
+        versionName="1.0.0"
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+    }
     buildFeatures { compose=true; buildConfig=true }
-    buildTypes { release { isMinifyEnabled=false } }
+    buildTypes {
+        release { isMinifyEnabled=false }
+    }
     compileOptions { sourceCompatibility=JavaVersion.VERSION_17; targetCompatibility=JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget="17" }
-    defaultConfig { buildConfigField("String","API_BASE_URL","\"http://10.0.2.2:8000\"") }
 }
 
 dependencies {
