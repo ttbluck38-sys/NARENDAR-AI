@@ -2,34 +2,21 @@ package com.narendar.hub
 
 import android.content.Context
 import android.os.Bundle
-import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -39,313 +26,76 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
+import kotlin.math.abs
+import kotlin.math.max
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent { NarendarHubApp(applicationContext) }
-    }
-}
+class MainActivity : ComponentActivity(){override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{NarendarHubApp(applicationContext)}}}
 
-data class QuizQ(val subject: String, val question: String, val options: List<String>, val answer: Int, val explanation: String)
-data class Note(val id: Long, val title: String, val body: String)
-data class Task(val id: Long, val text: String, val subject: String, val done: Boolean)
-data class FlashCard(val front: String, val back: String)
+data class Question(val id:String,val grade:Int,val subject:String,val difficulty:String,val topic:String,val text:String,val options:List<String>,val answer:Int,val explanation:String)
+data class Note(val id:Long,val title:String,val body:String,val subject:String,val pinned:Boolean)
+data class Task(val id:Long,val text:String,val subject:String,val done:Boolean)
+data class Subject(val name:String,val icon:String,val description:String)
 
-private val questions = listOf(
-    QuizQ("Math", "What is 15% of 200?", listOf("15", "20", "30", "40"), 2, "15/100 × 200 = 30."),
-    QuizQ("Math", "If x + 7 = 19, what is x?", listOf("10", "11", "12", "13"), 2, "Subtract 7 from both sides: x = 12."),
-    QuizQ("Math", "What is the square of 12?", listOf("124", "144", "154", "164"), 1, "12 × 12 = 144."),
-    QuizQ("Math", "What is 3/4 as a percentage?", listOf("25%", "50%", "75%", "80%"), 2, "3 ÷ 4 = 0.75, which is 75%."),
-    QuizQ("Science", "Which gas do plants mainly use for photosynthesis?", listOf("Oxygen", "Nitrogen", "Carbon dioxide", "Hydrogen"), 2, "Plants use carbon dioxide with water and light to make food."),
-    QuizQ("Science", "What is the SI unit of force?", listOf("Joule", "Watt", "Newton", "Pascal"), 2, "Force is measured in newtons (N)."),
-    QuizQ("Science", "Water boils at what temperature at standard pressure?", listOf("50°C", "75°C", "100°C", "120°C"), 2, "At standard pressure, water boils at 100°C."),
-    QuizQ("Computer", "What does CPU stand for?", listOf("Central Processing Unit", "Computer Power Unit", "Central Program Utility", "Core Processing User"), 0, "CPU means Central Processing Unit."),
-    QuizQ("Computer", "Which is used to style HTML pages?", listOf("CSS", "SQL", "FTP", "BIOS"), 0, "CSS controls the presentation and layout of web pages."),
-    QuizQ("Computer", "Which number system uses only 0 and 1?", listOf("Decimal", "Binary", "Octal", "Hexadecimal"), 1, "Binary uses two digits: 0 and 1."),
-    QuizQ("Computer", "What does HTML stand for?", listOf("HyperText Markup Language", "High Transfer Machine Language", "Home Tool Markup Link", "Hyperlink Text Management Language"), 0, "HTML means HyperText Markup Language."),
-    QuizQ("English", "Choose the correct sentence.", listOf("He go to school.", "He goes to school.", "He going school.", "He gone school."), 1, "With singular he, the present-tense verb is goes."),
-    QuizQ("English", "What is the opposite of 'ancient'?", listOf("Old", "Modern", "Historic", "Past"), 1, "Modern means belonging to the present or recent times."),
-    QuizQ("GK", "What is the largest planet in our solar system?", listOf("Earth", "Mars", "Jupiter", "Venus"), 2, "Jupiter is the largest planet in the Solar System."),
-    QuizQ("GK", "How many continents are commonly recognized?", listOf("5", "6", "7", "8"), 2, "The commonly taught model recognizes seven continents.")
-)
-
-private val flashCards = listOf(
-    FlashCard("CPU", "Central Processing Unit — the main processor of a computer."),
-    FlashCard("Photosynthesis", "The process plants use to make food using light, water and carbon dioxide."),
-    FlashCard("HTML", "HyperText Markup Language — the structure of a web page."),
-    FlashCard("Force", "A push or pull; SI unit is the newton (N)."),
-    FlashCard("Binary", "A base-2 number system using only 0 and 1."),
-    FlashCard("CSS", "Cascading Style Sheets — controls the visual style of web pages.")
-)
+private val baseSubjects=listOf(Subject("Mathematics","∑","Numbers, algebra, geometry and problem solving"),Subject("Science","⚗","Life, matter, energy, earth and experiments"),Subject("English","A","Grammar, vocabulary, reading and language"),Subject("Computer Science","⌘","Computing, coding, internet and digital skills"),Subject("SST","◎","History, geography, civics and society"),Subject("Urdu","ا","Grammar, vocabulary, reading and literature"))
+private val seniorSubjects=baseSubjects+listOf(Subject("Physics","Φ","Motion, forces, energy, waves and electricity"),Subject("Chemistry","⚛","Atoms, reactions, matter and chemical concepts"),Subject("Biology","♧","Cells, organisms, genetics and life processes"))
+private val difficulties=listOf("Easy","Medium","Hard")
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun NarendarHubApp(context: Context) {
-    val prefs = remember { context.getSharedPreferences("narendar_hub", Context.MODE_PRIVATE) }
-    var page by remember { mutableStateOf("Home") }
-    var dark by remember { mutableStateOf(prefs.getBoolean("dark", false)) }
-    var score by remember { mutableIntStateOf(prefs.getInt("score", 0)) }
-    var streak by remember { mutableIntStateOf(prefs.getInt("streak", 0)) }
-    var completedQuizzes by remember { mutableIntStateOf(prefs.getInt("quizzes", 0)) }
-    var notes by remember { mutableStateOf(loadNotes(prefs)) }
-    var tasks by remember { mutableStateOf(loadTasks(prefs)) }
-    var snackbar by remember { mutableStateOf("") }
-
-    fun saveNotes(value: List<Note>) { notes = value; prefs.edit().putString("notes", notesToJson(value)).apply() }
-    fun saveTasks(value: List<Task>) { tasks = value; prefs.edit().putString("tasks", tasksToJson(value)).apply() }
-
-    LaunchedEffect(snackbar) { if (snackbar.isNotBlank()) { delay(1800); snackbar = "" } }
-
-    val colors = if (dark) darkColorScheme(primary = Color(0xFF8AB4FF), secondary = Color(0xFF7FE3C4)) else lightColorScheme(primary = Color(0xFF315EFB), secondary = Color(0xFF00A884), tertiary = Color(0xFF7C4DFF))
-    MaterialTheme(colorScheme = colors) {
-        Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text("Narendar Hub", fontWeight = FontWeight.ExtraBold) },
-                    actions = { Text(if (dark) "☾" else "☀", fontSize = 22.sp, modifier = Modifier.padding(end = 16.dp)) }
-                )
-            },
-            bottomBar = {
-                NavigationBar {
-                    listOf("Home" to "⌂", "Quiz" to "✓", "Tools" to "✦", "Notes" to "✎", "More" to "☰").forEach { (name, icon) ->
-                        NavigationBarItem(selected = page == name, onClick = { page = name }, icon = { Text(icon, fontSize = 20.sp) }, label = { Text(name) })
-                    }
-                }
-            }
-        ) { padding ->
-            Box(Modifier.padding(padding).fillMaxSize()) {
-                AnimatedContent(targetState = page, transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(120)) }, label = "page") { target ->
-                    when (target) {
-                        "Home" -> HomeScreen(score, streak, completedQuizzes, tasks, notes.size) { page = it }
-                        "Quiz" -> QuizScreen { gained ->
-                            score += gained
-                            completedQuizzes++
-                            streak = (streak + 1).coerceAtMost(999)
-                            prefs.edit().putInt("score", score).putInt("streak", streak).putInt("quizzes", completedQuizzes).apply()
-                            snackbar = "Quiz saved • +$gained points"
-                        }
-                        "Tools" -> ToolsScreen()
-                        "Notes" -> NotesScreen(notes, ::saveNotes)
-                        else -> MoreScreen(dark, { value -> dark = value; prefs.edit().putBoolean("dark", value).apply() }, score, streak, completedQuizzes, tasks, ::saveTasks) { page = it }
-                    }
-                }
-                AnimatedVisibility(visible = snackbar.isNotBlank(), enter = slideInVertically { it } + fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)) {
-                    Surface(shape = RoundedCornerShape(18.dp), tonalElevation = 8.dp) { Text(snackbar, Modifier.padding(horizontal = 18.dp, vertical = 11.dp), fontWeight = FontWeight.SemiBold) }
-                }
-            }
-        }
-    }
+@Composable fun NarendarHubApp(context:Context){
+ val prefs=remember{context.getSharedPreferences("narendar_hub_final",Context.MODE_PRIVATE)}
+ var classChoice by remember{mutableIntStateOf(prefs.getInt("class",0))};var page by remember{mutableStateOf(if(classChoice==0)"Choose" else "Home")};var dark by remember{mutableStateOf(prefs.getBoolean("dark",false))};var xp by remember{mutableIntStateOf(prefs.getInt("xp",0))};var correct by remember{mutableIntStateOf(prefs.getInt("correct",0))};var attempted by remember{mutableIntStateOf(prefs.getInt("attempted",0))};var streak by remember{mutableIntStateOf(prefs.getInt("streak",0))};var notes by remember{mutableStateOf(loadNotes(prefs))};var tasks by remember{mutableStateOf(loadTasks(prefs))};var snack by remember{mutableStateOf("")}
+ fun saveNotes(v:List<Note>){notes=v;prefs.edit().putString("notes",notesJson(v)).apply()};fun saveTasks(v:List<Task>){tasks=v;prefs.edit().putString("tasks",tasksJson(v)).apply()};fun setClass(v:Int){classChoice=v;prefs.edit().putInt("class",v).apply();page="Home"};fun record(ok:Boolean,g:Int){attempted++;if(ok)correct++;xp+=g;streak=max(streak,1);prefs.edit().putInt("xp",xp).putInt("correct",correct).putInt("attempted",attempted).putInt("streak",streak).apply()}
+ LaunchedEffect(snack){if(snack.isNotEmpty()){delay(1700);snack=""}}
+ val colors=if(dark)darkColorScheme(primary=Color(0xFF9AB8FF),secondary=Color(0xFF72E4C1),tertiary=Color(0xFFD0A5FF)) else lightColorScheme(primary=Color(0xFF315EFB),secondary=Color(0xFF00A884),tertiary=Color(0xFF7C4DFF))
+ MaterialTheme(colorScheme=colors){if(page=="Choose"){ClassPicker(classChoice,::setClass);return@MaterialTheme};Scaffold(topBar={CenterAlignedTopAppBar(title={Text("Narendar Hub",fontWeight=FontWeight.ExtraBold)},actions={Text(if(dark)"☾" else "☀",fontSize=21.sp,modifier=Modifier.padding(end=16.dp))})},bottomBar={NavigationBar{listOf("Home" to "⌂","Learn" to "▣","Quiz" to "✓","Library" to "▤","Profile" to "●").forEach{(n,i)->NavigationBarItem(page==n,{page=n},icon={Text(i,fontSize=19.sp)},label={Text(n)})}}}){pad->Box(Modifier.padding(pad).fillMaxSize()){AnimatedContent(page,transitionSpec={fadeIn(tween(220)) togetherWith fadeOut(tween(120))},label="nav"){p->when(p){"Home"->HomeScreen(classChoice,xp,correct,attempted,streak,tasks,notes.size){page=it};"Learn"->LearnScreen(classChoice){page="Quiz"};"Quiz"->QuizScreen(classChoice,::record){snack=it};"Library"->LibraryScreen(notes,tasks,::saveNotes,::saveTasks);"Profile"->ProfileScreen(classChoice,xp,correct,attempted,streak,dark,{v->dark=v;prefs.edit().putBoolean("dark",v).apply()}){classChoice=0;prefs.edit().putInt("class",0).apply();page="Choose"}}};AnimatedVisibility(snack.isNotEmpty(),enter=slideInVertically{it}+fadeIn(),exit=fadeOut(),modifier=Modifier.align(Alignment.BottomCenter).padding(bottom=8.dp)){Surface(shape=RoundedCornerShape(18.dp),tonalElevation=8.dp){Text(snack,Modifier.padding(horizontal=18.dp,vertical=11.dp),fontWeight=FontWeight.Bold)}}}}}}
 }
 
-@Composable
-fun HomeScreen(score: Int, streak: Int, quizzes: Int, tasks: List<Task>, noteCount: Int, onNavigate: (String) -> Unit) {
-    LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item {
-            AnimatedVisibility(true, enter = fadeIn(tween(350)) + slideInVertically(tween(350)) { it / 3 }) {
-                Column {
-                    Text("Welcome back, learner 👋", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
-                    Text("Learn smarter. Stay consistent. Build your skills.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-        item { HeroCard(score, streak) }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatCard("Quizzes", quizzes.toString(), "✓", Modifier.weight(1f))
-                StatCard("Notes", noteCount.toString(), "✎", Modifier.weight(1f))
-                StatCard("Pending", tasks.count { !it.done }.toString(), "◷", Modifier.weight(1f))
-            }
-        }
-        item { SectionTitle("Quick actions", "Everything important is one tap away") }
-        item { ActionCard("🧠", "Quiz Arena", "15 offline MCQs + explanations", { onNavigate("Quiz") }) }
-        item { ActionCard("🧮", "Study Tools", "Calculator, formulas, converter & tables", { onNavigate("Tools") }) }
-        item { ActionCard("📝", "My Notes", "Create, save and manage notes", { onNavigate("Notes") }) }
-        item { ActionCard("📅", "Planner & Focus", "Tasks, flashcards, timer and stats", { onNavigate("More") }) }
-        item {
-            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
-                Column(Modifier.padding(18.dp)) {
-                    Text("100% Offline", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.height(5.dp))
-                    Text("No login • no API key • no server • your notes and tasks stay on this device.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-    }
+@Composable fun ClassPicker(selected:Int,onSelect:(Int)->Unit){var shown by remember{mutableStateOf(false)};LaunchedEffect(Unit){shown=true};Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF172554),Color(0xFF312E81),Color(0xFF0F172A)))).verticalScroll(rememberScrollState())){Column(Modifier.padding(22.dp),horizontalAlignment=Alignment.CenterHorizontally){Spacer(Modifier.height(42.dp));AnimatedVisibility(shown,enter=scaleIn(tween(500))+fadeIn()){Surface(shape=CircleShape,color=Color.White.copy(.12f),modifier=Modifier.size(108.dp)){Box(contentAlignment=Alignment.Center){Text("N",color=Color.White,fontSize=52.sp,fontWeight=FontWeight.Black)}}};Spacer(Modifier.height(20.dp));Text("NARENDAR HUB",color=Color.White,fontSize=30.sp,fontWeight=FontWeight.Black);Text("Learn • Play • Master",color=Color.White.copy(.72f));Spacer(Modifier.height(30.dp));Text("Choose your learning path",color=Color.White,fontSize=20.sp,fontWeight=FontWeight.Bold);Text("You can change this later",color=Color.White.copy(.65f),fontSize=13.sp);Spacer(Modifier.height(15.dp));listOf(0 to "🌎  All Classes",1 to "🎒  Class 1",2 to "🎒  Class 2",3 to "🎒  Class 3",4 to "🎒  Class 4",5 to "🎒  Class 5",6 to "🎒  Class 6",7 to "🎒  Class 7",8 to "🚀  Class 8",9 to "🏆  Class 9+ / Senior").forEachIndexed{idx,p->AnimatedVisibility(shown,enter=fadeIn(tween(260,idx*35))+slideInVertically(tween(300,idx*35)){it/2}){Card(onClick={onSelect(p.first)},modifier=Modifier.fillMaxWidth().padding(vertical=5.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=Color.White.copy(if(selected==p.first).24f else .12f))){Row(Modifier.padding(17.dp),verticalAlignment=Alignment.CenterVertically){Text(p.second,color=Color.White,fontSize=16.sp,fontWeight=FontWeight.Bold);Spacer(Modifier.weight(1f));Text(if(selected==p.first)"✓" else "›",color=Color.White,fontSize=23.sp)}}}};Spacer(Modifier.height(20.dp));Text("All core learning and quiz features work offline.",color=Color.White.copy(.55f),textAlign=TextAlign.Center,fontSize=12.sp)}}}
+
+@Composable fun HomeScreen(grade:Int,xp:Int,correct:Int,attempted:Int,streak:Int,tasks:List<Task>,notes:Int,nav:(String)->Unit){val accuracy=if(attempted==0)0 else correct*100/attempted;val level=xp/500+1;val progress=(xp%500)/500f;LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(13.dp)){item{Column{Text("Welcome back 👋",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);Text(if(grade==0)"All Classes" else "Class $grade",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)}};item{Card(shape=RoundedCornerShape(28.dp),modifier=Modifier.fillMaxWidth()){Box(Modifier.background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary,MaterialTheme.colorScheme.tertiary)))){Column(Modifier.padding(21.dp)){Text("LEVEL $level  •  $xp XP",color=Color.White.copy(.8f),fontWeight=FontWeight.Bold,fontSize=12.sp);Text("Your learning journey",color=Color.White,fontSize=25.sp,fontWeight=FontWeight.Black);Spacer(Modifier.height(13.dp));LinearProgressIndicator({progress},Modifier.fillMaxWidth().height(9.dp).clip(RoundedCornerShape(8.dp)),color=Color.White,trackColor=Color.White.copy(.18f));Spacer(Modifier.height(10.dp));Row{Text("🔥 $streak streak",color=Color.White,fontWeight=FontWeight.Bold);Spacer(Modifier.weight(1f));Text("$accuracy% accuracy",color=Color.White,fontWeight=FontWeight.Bold)}}}}};item{Section("Today's missions","Turn study into a game")};item{Mission("🎯","20 Question Challenge","Earn XP by completing a quiz"){nav("Quiz")}};item{Mission("📚","Continue Learning","Explore your selected class subjects"){nav("Learn")}};item{Section("Quick play","Your most-used study modes")};item{QuickGrid(nav)};item{Section("Your progress","Keep your momentum going")};item{Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){MiniStat("Correct",correct.toString(),Modifier.weight(1f));MiniStat("Attempted",attempted.toString(),Modifier.weight(1f));MiniStat("Notes",notes.toString(),Modifier.weight(1f))}};item{Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(22.dp)){Column(Modifier.padding(18.dp)){Text("Offline-first",fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary);Text("Core learning, question generation, notes, progress and tools work without an account or API key.",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=13.sp)}}}}
+}
+@Composable fun Section(a:String,b:String){Column{Text(a,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black);Text(b,color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=12.sp)}}
+@Composable fun MiniStat(a:String,b:String,m:Modifier){Card(m,shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(13.dp)){Text(b,fontSize=23.sp,fontWeight=FontWeight.Black);Text(a,fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}
+@Composable fun Mission(i:String,t:String,s:String,c:()->Unit){Card(Modifier.fillMaxWidth().clickable{c()},shape=RoundedCornerShape(22.dp)){Row(Modifier.padding(17.dp),verticalAlignment=Alignment.CenterVertically){Text(i,fontSize=30.sp);Spacer(Modifier.width(13.dp));Column(Modifier.weight(1f)){Text(t,fontWeight=FontWeight.Bold);Text(s,color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=12.sp)};Text("PLAY",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Black)}}}
+@Composable fun QuickGrid(nav:(String)->Unit){Column(verticalArrangement=Arrangement.spacedBy(8.dp)){Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Quick("🧠","Quiz",Modifier.weight(1f)){nav("Quiz")};Quick("📚","Learn",Modifier.weight(1f)){nav("Learn")}};Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Quick("🃏","Flashcards",Modifier.weight(1f)){nav("Library")};Quick("📊","Stats",Modifier.weight(1f)){nav("Profile")}}}}
+@Composable fun Quick(i:String,t:String,m:Modifier,c:()->Unit){Card(m.clickable{c()},shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(15.dp)){Text(i,fontSize=25.sp);Text(t,fontWeight=FontWeight.Bold)}}}
+
+@Composable fun LearnScreen(grade:Int,start:()->Unit){var subject by remember{mutableStateOf("Mathematics")};var topic by remember{mutableStateOf("All")};val subjects=if(grade>=9||grade==0)seniorSubjects else baseSubjects;val topics=listOf("All","Basics","Core Concepts","Practice","Revision","Challenge");Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){Text("Study Library",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);Text("Learn first, then test yourself.",color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(15.dp));Text("Subjects",fontWeight=FontWeight.Black);subjects.forEach{s->val sel=subject==s.name;Card(onClick={subject=s.name},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=if(sel)MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)){Row(Modifier.padding(15.dp),verticalAlignment=Alignment.CenterVertically){Surface(shape=CircleShape,color=MaterialTheme.colorScheme.primary.copy(.12f)){Text(s.icon,Modifier.padding(10.dp),fontSize=21.sp)};Spacer(Modifier.width(13.dp));Column(Modifier.weight(1f)){Text(s.name,fontWeight=FontWeight.Black);Text(s.description,fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)};Text(if(sel)"✓" else "›",color=MaterialTheme.colorScheme.primary,fontSize=22.sp)}}};Spacer(Modifier.height(12.dp));Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(7.dp)){topics.forEach{FilterChip(topic==it,{topic=it},label={Text(it)})}};Spacer(Modifier.height(12.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(24.dp)){Column(Modifier.padding(20.dp)){Text("📖 $subject",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black);Text("Class ${if(grade==0)"1–9+" else "1–$grade"} coverage • 2,500+ target questions per difficulty bank",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=13.sp);Spacer(Modifier.height(12.dp));Text("Study cards + explanations",fontWeight=FontWeight.Bold);Text("Prepare from concepts and explanations before entering the test arena.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(14.dp));Button(start,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)){Text("START PRACTICE")}}}}}
+
+@Composable fun QuizScreen(selectedGrade:Int,record:(Boolean,Int)->Unit,toast:(String)->Unit){var subject by remember{mutableStateOf("Mathematics")};var difficulty by remember{mutableStateOf("Mixed")};var count by remember{mutableIntStateOf(10)};var index by remember{mutableIntStateOf(0)};var rightCount by remember{mutableIntStateOf(0)};var picked by remember{mutableIntStateOf(-1)};var finished by remember{mutableStateOf(false)};var started by remember{mutableStateOf(false)};val subjects=if(selectedGrade>=9||selectedGrade==0)seniorSubjects else baseSubjects;val maxGrade=if(selectedGrade==0)9 else selectedGrade;val bank=remember(subject,difficulty,selectedGrade){generateBank(maxGrade,subject,difficulty,2500)};val questions=remember(count,subject,difficulty,selectedGrade){bank.shuffled().take(count)}
+ if(!started){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){Text("Quiz Arena",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);Text("Game-like testing with a 2,500-question target per class/subject/difficulty bank.",color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(18.dp));Text("Subject",fontWeight=FontWeight.Black);Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(7.dp)){subjects.forEach{FilterChip(subject==it.name,{subject=it.name},label={Text(it.name)})}};Spacer(Modifier.height(13.dp));Text("Difficulty",fontWeight=FontWeight.Black);Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){listOf("Mixed","Easy","Medium","Hard").forEach{FilterChip(difficulty==it,{difficulty=it},label={Text(it)})}};Spacer(Modifier.height(13.dp));Text("Questions",fontWeight=FontWeight.Black);Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){listOf(10,20,50,100).forEach{FilterChip(count==it,{count=it},label={Text(it.toString())})}};Spacer(Modifier.height(20.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(25.dp)){Column(Modifier.padding(21.dp)){Text("🎮 Ready?",fontSize=24.sp,fontWeight=FontWeight.Black);Text("Class scope: ${if(selectedGrade==0)"All classes" else "Class 1–$selectedGrade"}\nEvery generated bank is addressable by class, subject and difficulty.",color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(14.dp));Button({started=true},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)){Text("ENTER ARENA")}}}};return}
+ if(finished){val acc=if(count==0)0 else rightCount*100/count;Column(Modifier.fillMaxSize().padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally){Spacer(Modifier.height(30.dp));Text("🏆",fontSize=62.sp);Text("Quiz Complete",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black);Text("$rightCount / $count correct",fontSize=28.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary);Text("Accuracy $acc% • +${rightCount*20} XP",color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(18.dp));LinearProgressIndicator({acc/100f},Modifier.fillMaxWidth().height(10.dp));Spacer(Modifier.height(24.dp));Button({index=0;rightCount=0;picked=-1;finished=false;started=false},modifier=Modifier.fillMaxWidth()){Text("PLAY AGAIN")}};return}
+ val q=questions.getOrElse(index){questions.first()};val progress=(index+if(picked>=0)1 else 0).toFloat()/count;Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){Row(verticalAlignment=Alignment.CenterVertically){Text("Question ${index+1}/$count",fontWeight=FontWeight.Black);Spacer(Modifier.weight(1f));Text("+20 XP",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)};Spacer(Modifier.height(8.dp));LinearProgressIndicator({progress.coerceIn(0f,1f)},Modifier.fillMaxWidth().height(8.dp));Spacer(Modifier.height(13.dp));Text("Class ${q.grade} • ${q.subject} • ${q.difficulty} • ${q.topic}",color=MaterialTheme.colorScheme.primary,fontSize=12.sp,fontWeight=FontWeight.Bold);Spacer(Modifier.height(9.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(25.dp)){Text(q.text,Modifier.padding(21.dp),fontSize=19.sp,fontWeight=FontWeight.Black)};Spacer(Modifier.height(12.dp));q.options.forEachIndexed{i,opt->val sel=picked==i;val right=picked>=0&&i==q.answer;val wrong=sel&&picked!=q.answer;val bg=when{right->Color(0xFFB7F7D5);wrong->Color(0xFFFFD0D0);sel->MaterialTheme.colorScheme.primaryContainer;else->MaterialTheme.colorScheme.surfaceVariant};Card(onClick={if(picked<0)picked=i},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=bg)){Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically){Text("${('A'.code+i).toChar()}",fontWeight=FontWeight.Black);Spacer(Modifier.width(13.dp));Text(opt,Modifier.weight(1f),fontWeight=if(sel||right)FontWeight.Bold else FontWeight.Normal);if(right)Text("✓",fontSize=20.sp)}}};AnimatedVisibility(picked>=0,enter=fadeIn()+expandVertically()){Column{Spacer(Modifier.height(10.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(17.dp)){Text(if(picked==q.answer)"✨ Correct!" else "📖 Learn from this",fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary);Text(q.explanation,color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=13.sp)}};Spacer(Modifier.height(10.dp));Button({val ok=picked==q.answer;if(ok)rightCount++;record(ok,if(ok)20 else 5);if(index+1>=count){finished=true;toast("Quiz finished • XP saved")}else{index++;picked=-1}},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)){Text(if(index+1>=count)"FINISH QUIZ" else "NEXT QUESTION")}}}}
 }
 
-@Composable
-fun HeroCard(score: Int, streak: Int) {
-    Card(shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) {
-        Box(Modifier.background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.tertiary)))) {
-            Column(Modifier.padding(22.dp)) {
-                Text("YOUR LEARNING SCORE", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                Text(score.toString(), color = Color.White, fontSize = 42.sp, fontWeight = FontWeight.ExtraBold)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("🔥 $streak day streak", color = Color.White, fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.weight(1f))
-                    Text("Keep going!", color = Color.White.copy(alpha = .9f))
-                }
-            }
-        }
-    }
+private fun generateBank(maxGrade:Int,subject:String,difficulty:String,size:Int):List<Question>{val out=ArrayList<Question>(size);val ds=if(difficulty=="Mixed")difficulties else listOf(difficulty);for(i in 0 until size){val g=i%max(1,maxGrade)+1;val d=ds[i%ds.size];out+=makeQuestion(g,subject,d,i,(i+1)*7919+g*97+subject.hashCode())};return out}
+private fun makeQuestion(g:Int,s:String,d:String,i:Int,seed:Int):Question{val n=abs(seed%900)+10;val topic=when(s){"Mathematics"->listOf("Arithmetic","Algebra","Geometry","Percentages","Patterns")[i%5];"Science"->listOf("Matter","Energy","Life Science","Earth","Forces")[i%5];"English"->listOf("Grammar","Vocabulary","Sentence Skills","Reading","Usage")[i%5];"Computer Science"->listOf("Hardware","Software","Programming","Networks","Digital Skills")[i%5];"SST"->listOf("History","Geography","Civics","Culture","Society")[i%5];"Urdu"->listOf("Grammar","Vocabulary","Reading","Literature","Usage")[i%5];"Physics"->listOf("Motion","Forces","Energy","Waves","Electricity")[i%5];"Chemistry"->listOf("Atoms","Matter","Reactions","Elements","Solutions")[i%5];else->listOf("Cells","Plants","Animals","Genetics","Ecology")[i%5]};return when(s){
+ "Mathematics"->{val a=n%90+5;val b=(n/7)%40+2;val ans=when(i%4){0->a+b;1->a*b;2->a-b;else->a*a};val text=when(i%4){0->"What is $a + $b?";1->"What is $a × $b?";2->"What is $a − $b?";else->"What is the square of $a?"};numericQ(g,d,topic,i,text,ans,"Calculate carefully: the required operation gives $ans.")}
+ "Science"->mcq(g,s,d,topic,i,listOf(Triple("Which process do green plants use to make food?",listOf("Photosynthesis","Digestion","Evaporation","Filtration"),0),Triple("Which state of matter has a fixed volume but no fixed shape?",listOf("Solid","Liquid","Gas","Plasma"),1),Triple("Which force pulls objects toward Earth?",listOf("Friction","Gravity","Magnetism","Buoyancy"),1),Triple("Which organ pumps blood around the human body?",listOf("Lung","Brain","Heart","Kidney"),2),Triple("Water changes from liquid to gas by which process?",listOf("Freezing","Condensation","Evaporation","Melting"),2))[i%5])
+ "Computer Science"->mcq(g,s,d,topic,i,listOf(Triple("What does CPU stand for?",listOf("Central Processing Unit","Computer Power Utility","Core Program User","Central Print Unit"),0),Triple("Which language structures a web page?",listOf("HTML","SQL","CSS","BIOS"),0),Triple("Which number system uses 0 and 1?",listOf("Decimal","Binary","Octal","Roman"),1),Triple("What does RAM provide to a running computer?",listOf("Temporary working memory","Permanent paper storage","Internet service","Power generation"),0),Triple("Which is an example of an operating system?",listOf("Android","HTML","JPEG","USB"),0))[i%5])
+ "English"->mcq(g,s,d,topic,i,listOf(Triple("Choose the correct sentence.",listOf("She go home.","She goes home.","She going home.","She gone home."),1),Triple("Choose the closest meaning of 'rapid'.",listOf("Slow","Quick","Weak","Late"),1),Triple("What is the opposite of 'ancient'?",listOf("Modern","Old","Historic","Past"),0),Triple("Which word is a noun?",listOf("Beautiful","Run","Teacher","Quickly"),2),Triple("Choose the correct plural of 'child'.",listOf("Childs","Children","Childes","Childrens"),1))[i%5])
+ "SST"->mcq(g,s,d,topic,i,listOf(Triple("Which is a branch of social studies?",listOf("Geography","Algebra","Chemistry","Geometry"),0),Triple("Which tool helps represent locations on Earth?",listOf("Map","Thermometer","Scale","Stopwatch"),0),Triple("What does a constitution generally describe?",listOf("Basic rules of government","Weather","Chemical formulae","Multiplication facts"),0),Triple("Which feature describes a place's long-term atmospheric pattern?",listOf("Climate","Instant weather","Altitude only","Time zone"),0),Triple("Why do societies create laws?",listOf("To organize behavior","To change gravity","To stop seasons","To create planets"),0))[i%5])
+ "Urdu"->mcq(g,s,d,topic,i,listOf(Triple("اردو میں 'کتاب' کس قسم کا لفظ ہے؟",listOf("اسم","فعل","حرف","صفت"),0),Triple("'خوش' کی ضد کیا ہے؟",listOf("غمگین","تیز","اونچا","روشن"),0),Triple("جملہ مکمل کریں: علی اسکول ___ گیا۔",listOf("کو","میں","سے","نے"),1),Triple("'دوڑنا' کس قسم کا لفظ ہے؟",listOf("اسم","فعل","حرف","صفت"),1),Triple("'باغ' کا تعلق کس چیز سے ہے؟",listOf("جگہ","صرف آواز","عدد","رنگ"),0))[i%5])
+ "Physics"->mcq(g,s,d,topic,i,listOf(Triple("What is the SI unit of force?",listOf("Joule","Newton","Watt","Pascal"),1),Triple("Speed is distance divided by what?",listOf("Mass","Time","Force","Energy"),1),Triple("Which quantity has both magnitude and direction?",listOf("Scalar","Vector","Mass only","Temperature only"),1),Triple("What form of energy is associated with motion?",listOf("Kinetic","Chemical","Nuclear","Stored"),0),Triple("Which device measures electric current?",listOf("Ammeter","Barometer","Thermometer","Hygrometer"),0))[i%5])
+ "Chemistry"->mcq(g,s,d,topic,i,listOf(Triple("What is the smallest unit of an element that retains its identity?",listOf("Atom","Cell","Planet","Tissue"),0),Triple("Which particle has a negative charge?",listOf("Proton","Neutron","Electron","Nucleus"),2),Triple("A substance with pH below 7 is generally what?",listOf("Acidic","Neutral","Basic","Metallic"),0),Triple("What is H2O commonly called?",listOf("Oxygen","Water","Hydrogen","Salt"),1),Triple("What happens to particles when most solids are heated?",listOf("They generally move more","They disappear","They become planets","They stop forever"),0))[i%5])
+ else->mcq(g,s,d,topic,i,listOf(Triple("What is the basic unit of life?",listOf("Cell","Atom","Organ","Tissue"),0),Triple("Which organelle is commonly called the powerhouse of the cell?",listOf("Nucleus","Mitochondrion","Ribosome","Vacuole"),1),Triple("Which process helps plants make food?",listOf("Photosynthesis","Digestion","Filtration","Respiration only"),0),Triple("Which carries oxygen in human blood?",listOf("Red blood cells","Platelets","Neurons","Bone cells"),0),Triple("A habitat is best described as what?",listOf("A place where an organism lives","A type of cell","A chemical reaction","A planet"),0))[i%5])}}
+private fun numericQ(g:Int,d:String,t:String,i:Int,text:String,ans:Int,exp:String):Question{val o=listOf(ans,ans+5+i%3,max(0,ans-7-i%2),ans+12).distinct().take(4).let{if(it.size==4)it else listOf(ans,ans+1,ans+2,ans+3)}.shuffled();return Question("M-$g-$i",g,"Mathematics",d,t,text,o.map{it.toString()},o.indexOf(ans),exp)}
+private fun mcq(g:Int,s:String,d:String,t:String,i:Int,x:Triple<String,List<String>,Int>)=Question("${s.take(3)}-$g-$i",g,s,d,t,x.first,x.second,x.third,"Review the concept: the correct choice is ${x.second[x.third]}. This is Class $g $s $t practice.")
+
+@Composable fun LibraryScreen(notes:List<Note>,tasks:List<Task>,saveNotes:(List<Note>)->Unit,saveTasks:(List<Task>)->Unit){var tab by remember{mutableStateOf("Notes")};var title by remember{mutableStateOf("")};var body by remember{mutableStateOf("")};var subj by remember{mutableStateOf("General")};var cardIndex by remember{mutableIntStateOf(0)};var taskText by remember{mutableStateOf("")};var seconds by remember{mutableIntStateOf(1500)};var running by remember{mutableStateOf(false)};LaunchedEffect(running){while(running&&seconds>0){delay(1000);seconds--};if(seconds==0)running=false};Column(Modifier.fillMaxSize().padding(16.dp)){Text("Library & Tools",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(7.dp)){listOf("Notes","Flashcards","Planner","Focus","Tools","Search").forEach{FilterChip(tab==it,{tab=it},label={Text(it)})}};Spacer(Modifier.height(12.dp));when(tab){
+ "Notes"->{OutlinedTextField(title,{title=it},Modifier.fillMaxWidth(),label={Text("Note title")});Spacer(Modifier.height(7.dp));OutlinedTextField(body,{body=it},Modifier.fillMaxWidth().height(110.dp),label={Text("Study note")});Spacer(Modifier.height(7.dp));OutlinedTextField(subj,{subj=it},Modifier.fillMaxWidth(),label={Text("Subject")});Spacer(Modifier.height(8.dp));Button({if(title.isNotBlank()||body.isNotBlank()){saveNotes(notes+Note(System.currentTimeMillis(),title.ifBlank{"Untitled"},body,subj,false));title="";body=""}},modifier=Modifier.fillMaxWidth()){Text("SAVE NOTE")};Spacer(Modifier.height(10.dp));LazyColumn(verticalArrangement=Arrangement.spacedBy(7.dp)){items(notes.reversed()){n->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(14.dp)){Row{Text(n.title,fontWeight=FontWeight.Black,Modifier.weight(1f));Text("×",Modifier.clickable{saveNotes(notes.filter{it.id!=n.id})},fontSize=20.sp)};Text(n.subject,color=MaterialTheme.colorScheme.primary,fontSize=11.sp);Text(n.body,fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}}}
+ "Flashcards"->{val cards=listOf("CPU" to "Central Processing Unit — the processor.","Photosynthesis" to "Plants use light, water and carbon dioxide to make food.","Binary" to "Base-2 number system using 0 and 1.","Force" to "A push or pull; SI unit is the newton.");val c=cards[cardIndex%cards.size];var flip by remember(cardIndex){mutableStateOf(false)};Column(horizontalAlignment=Alignment.CenterHorizontally){Text("Tap the card to flip",color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(15.dp));Card(onClick={flip=!flip},modifier=Modifier.fillMaxWidth().height(250.dp),shape=RoundedCornerShape(30.dp)){Box(Modifier.fillMaxSize().padding(25.dp),contentAlignment=Alignment.Center){Text(if(flip)c.second else c.first,fontSize=if(flip)17.sp else 34.sp,fontWeight=FontWeight.Black,textAlign=TextAlign.Center)}};Spacer(Modifier.height(12.dp));Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){OutlinedButton({cardIndex++}){Text("NEED REVISION")};Button({cardIndex++}){Text("KNOWN ✓")}}}}
+ "Planner"->{OutlinedTextField(taskText,{taskText=it},Modifier.fillMaxWidth(),label={Text("New task")});Spacer(Modifier.height(7.dp));Button({if(taskText.isNotBlank()){saveTasks(tasks+Task(System.currentTimeMillis(),taskText,"General",false));taskText=""}},Modifier.fillMaxWidth()){Text("ADD TASK")};Spacer(Modifier.height(10.dp));LazyColumn(verticalArrangement=Arrangement.spacedBy(7.dp)){items(tasks){t->Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant,RoundedCornerShape(15.dp)).padding(12.dp),verticalAlignment=Alignment.CenterVertically){Checkbox(t.done,{v->saveTasks(tasks.map{if(it.id==t.id)it.copy(done=v)else it})});Text(t.text,Modifier.weight(1f),fontWeight=FontWeight.Bold);Text("×",Modifier.clickable{saveTasks(tasks.filter{it.id!=t.id})},fontSize=20.sp)}}}}
+ "Focus"->{val mm=seconds/60;val ss=seconds%60;Column(horizontalAlignment=Alignment.CenterHorizontally,modifier=Modifier.fillMaxWidth()){Text("FOCUS MODE",fontWeight=FontWeight.Black);Spacer(Modifier.height(20.dp));Box(Modifier.size(220.dp).border(10.dp,MaterialTheme.colorScheme.primary,CircleShape),contentAlignment=Alignment.Center){Text(String.format(Locale.US,"%02d:%02d",mm,ss),fontSize=42.sp,fontWeight=FontWeight.Black)};Spacer(Modifier.height(18.dp));Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Button({running=!running}){Text(if(running)"PAUSE" else "START")};OutlinedButton({running=false;seconds=1500}){Text("RESET")}};Text("25/5 Pomodoro study session",color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=15.dp))}}
+ "Tools"->ToolsPanel();"Search"->SearchPanel(notes)}}}
 }
+@Composable fun ToolsPanel(){var a by remember{mutableStateOf("")};var b by remember{mutableStateOf("")};var result by remember{mutableStateOf("")};Column{Text("Study Toolbox",fontWeight=FontWeight.Black);Text("Calculator • percentages • averages • formulas • conversions • tables",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=12.sp);Spacer(Modifier.height(10.dp));Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){OutlinedTextField(a,{a=it},Modifier.weight(1f),label={Text("A")});OutlinedTextField(b,{b=it},Modifier.weight(1f),label={Text("B")})};Spacer(Modifier.height(7.dp));Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){listOf("+","−","×","÷").forEach{op->Button({result=calc(a,b,op)},Modifier.weight(1f)){Text(op)}}};Spacer(Modifier.height(10.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Text(result.ifBlank{"Result will appear here"},Modifier.padding(18.dp),fontSize=22.sp,fontWeight=FontWeight.Black)};Spacer(Modifier.height(12.dp));Text("Formula Vault",fontWeight=FontWeight.Black);listOf("Speed = distance ÷ time","Percentage = part ÷ whole × 100","Area = length × width","Force = mass × acceleration","Ohm's law: V = I × R").forEach{Text("• $it",Modifier.padding(vertical=4.dp),fontSize=13.sp)};Text("7 × table: ${List(10){7*(it+1)}.joinToString(" • ")}",Modifier.padding(top=8.dp),fontWeight=FontWeight.Bold)}}
+private fun calc(a:String,b:String,op:String):String{val x=a.toDoubleOrNull();val y=b.toDoubleOrNull();if(x==null||y==null)return"Enter two numbers";return when(op){"+"->"${x+y}";"−"->"${x-y}";"×"->"${x*y}";else->if(y==0.0)"Cannot divide by zero" else "${x/y}"}}
+@Composable fun SearchPanel(notes:List<Note>){var q by remember{mutableStateOf("")};Column{OutlinedTextField(q,{q=it},Modifier.fillMaxWidth(),label={Text("Search notes, topics, formulas and MCQs")});Spacer(Modifier.height(10.dp));if(q.isBlank())Text("Try: algebra, photosynthesis, CPU, formula",color=MaterialTheme.colorScheme.onSurfaceVariant)else{notes.filter{(it.title+it.body+it.subject).contains(q,true)}.forEach{Text("📝 ${it.title}",fontWeight=FontWeight.Bold,Modifier.padding(5.dp))};Text("Quiz bank search: '$q' is available through Quiz Arena.",color=MaterialTheme.colorScheme.primary,fontSize=12.sp)}}}
+@Composable fun ProfileScreen(grade:Int,xp:Int,correct:Int,attempted:Int,streak:Int,dark:Boolean,setDark:(Boolean)->Unit,reset:()->Unit){val acc=if(attempted==0)0 else correct*100/attempted;Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){Text("Player Profile",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);Spacer(Modifier.height(12.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(25.dp)){Column(Modifier.padding(20.dp)){Row(verticalAlignment=Alignment.CenterVertically){Surface(shape=CircleShape,color=MaterialTheme.colorScheme.primaryContainer,modifier=Modifier.size(68.dp)){Box(contentAlignment=Alignment.Center){Text("N",fontSize=30.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)}};Spacer(Modifier.width(14.dp));Column{Text("Narendar",fontSize=21.sp,fontWeight=FontWeight.Black);Text(if(grade==0)"All Classes" else "Class $grade",color=MaterialTheme.colorScheme.primary)}};Spacer(Modifier.height(15.dp));Text("Level ${xp/500+1}",fontWeight=FontWeight.Black);LinearProgressIndicator({(xp%500)/500f},Modifier.fillMaxWidth().padding(top=7.dp));Text("$xp XP",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}};Spacer(Modifier.height(12.dp));Text("Statistics",fontWeight=FontWeight.Black);Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){MiniStat("Accuracy","$acc%",Modifier.weight(1f));MiniStat("Correct",correct.toString(),Modifier.weight(1f));MiniStat("Streak",streak.toString(),Modifier.weight(1f))};Spacer(Modifier.height(14.dp));Text("Achievements",fontWeight=FontWeight.Black);listOf("🌱 First Steps","🔥 Streak Starter","🎯 Accuracy Hunter","🏆 Quiz Champion","📚 Study Builder","⚡ XP Collector").forEachIndexed{i,a->Card(Modifier.fillMaxWidth().padding(vertical=3.dp),shape=RoundedCornerShape(16.dp)){Row(Modifier.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Text(a,fontWeight=FontWeight.Bold);Spacer(Modifier.weight(1f));Text(if(xp>=(i+1)*100)"UNLOCKED" else "LOCKED",fontSize=10.sp,color=if(xp>=(i+1)*100)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}}};Spacer(Modifier.height(12.dp));Row(Modifier.fillMaxWidth().padding(vertical=8.dp),verticalAlignment=Alignment.CenterVertically){Text("Dark theme",Modifier.weight(1f));Switch(dark,setDark)};Button(onClick=reset,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=MaterialTheme.colorScheme.error),shape=RoundedCornerShape(15.dp)){Text("CHANGE CLASS")};Spacer(Modifier.height(10.dp));Text("Narendar Hub Final • 60+ feature platform foundation",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=12.sp)}}
 
-@Composable
-fun SectionTitle(title: String, sub: String) { Column { Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold); Text(sub, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp) } }
-
-@Composable
-fun StatCard(label: String, value: String, icon: String, modifier: Modifier) { Card(modifier, shape = RoundedCornerShape(18.dp)) { Column(Modifier.padding(13.dp)) { Text(icon, fontSize = 18.sp); Text(value, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold); Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) } } }
-
-@Composable
-fun ActionCard(icon: String, title: String, sub: String, onClick: () -> Unit) {
-    var pressed by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(if (pressed) .975f else 1f, tween(100, easing = FastOutSlowInEasing), label = "cardScale")
-    val elevation by animateDpAsState(if (pressed) 2.dp else 7.dp, tween(120), label = "cardElevation")
-    Card(shape = RoundedCornerShape(22.dp), elevation = CardDefaults.cardElevation(elevation), modifier = Modifier.fillMaxWidth().scale(scale).clickable { pressed = true; onClick(); pressed = false }) {
-        Row(Modifier.padding(17.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer) { Text(icon, Modifier.padding(12.dp), fontSize = 25.sp) }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) { Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp); Text(sub, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp) }
-            Text("›", fontSize = 28.sp, color = MaterialTheme.colorScheme.primary)
-        }
-    }
-}
-
-@Composable
-fun QuizScreen(onComplete: (Int) -> Unit) {
-    var selectedSubject by remember { mutableStateOf("All") }
-    var current by remember { mutableIntStateOf(0) }
-    var correct by remember { mutableIntStateOf(0) }
-    var picked by remember { mutableIntStateOf(-1) }
-    var finished by remember { mutableStateOf(false) }
-    val filtered = if (selectedSubject == "All") questions else questions.filter { it.subject == selectedSubject }
-    val progress = if (filtered.isEmpty()) 0f else (current + if (picked != -1) 1 else 0).toFloat() / filtered.size
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text("Quiz Arena", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
-        Text("Practice • learn • improve", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(12.dp))
-        LinearProgressIndicator({ progress.coerceIn(0f, 1f) }, Modifier.fillMaxWidth().height(7.dp), strokeCap = androidx.compose.ui.graphics.StrokeCap.Round)
-        Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) { listOf("All", "Math", "Science", "Computer", "English", "GK").forEach { subject -> FilterChip(selected = selectedSubject == subject, onClick = { selectedSubject = subject; current = 0; correct = 0; picked = -1; finished = false }, label = { Text(subject) }) } }
-        Spacer(Modifier.height(14.dp))
-        if (finished) {
-            AnimatedVisibility(true, enter = scaleIn(tween(300)) + fadeIn()) {
-                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp)) { Column(Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text("🎉", fontSize = 48.sp); Text("Quiz complete!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold); Text("$correct / ${filtered.size} correct", fontSize = 24.sp); Text("Great work — your score has been saved.", color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center); Spacer(Modifier.height(14.dp)); Button(onClick = { current = 0; correct = 0; picked = -1; finished = false }, shape = RoundedCornerShape(15.dp)) { Text("Try Again") } } }
-            }
-        } else if (filtered.isNotEmpty()) {
-            val q = filtered[current.coerceAtMost(filtered.lastIndex)]
-            Text("Question ${current + 1} of ${filtered.size} • ${q.subject}", fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(9.dp))
-            AnimatedContent(q.question, transitionSpec = { fadeIn(tween(160)) togetherWith fadeOut(tween(100)) }, label = "question") { text -> Text(text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) }
-            Spacer(Modifier.height(12.dp))
-            q.options.forEachIndexed { index, option ->
-                val chosen = picked == index
-                OutlinedButton(onClick = { if (picked == -1) picked = index }, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), shape = RoundedCornerShape(15.dp), colors = ButtonDefaults.outlinedButtonColors(containerColor = if (chosen) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface)) { Text(option, Modifier.fillMaxWidth(), fontWeight = if (chosen) FontWeight.Bold else FontWeight.Normal) }
-            }
-            AnimatedVisibility(picked != -1, enter = fadeIn() + slideInVertically { it / 4 }) {
-                Column {
-                    Spacer(Modifier.height(8.dp))
-                    Text(if (picked == q.answer) "✓ Correct!" else "✗ Not quite. Correct: ${q.options[q.answer]}", fontWeight = FontWeight.Bold, color = if (picked == q.answer) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
-                    Text(q.explanation, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-                    Spacer(Modifier.height(10.dp))
-                    Button(onClick = { if (picked == q.answer) correct++; if (current == filtered.lastIndex) { finished = true; onComplete(correct) } else { current++; picked = -1 } }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(15.dp)) { Text(if (current == filtered.lastIndex) "Finish Quiz" else "Next Question") }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ToolsScreen() {
-    var a by remember { mutableStateOf("") }; var b by remember { mutableStateOf("") }; var op by remember { mutableStateOf("+") }
-    val x = a.toDoubleOrNull(); val y = b.toDoubleOrNull()
-    val result = if (x != null && y != null) when (op) { "+" -> x + y; "−" -> x - y; "×" -> x * y; "÷" -> if (y == 0.0) null else x / y; else -> null } else null
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text("Study Tools", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
-        Text("Useful tools without internet", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(15.dp))
-        Card(shape = RoundedCornerShape(24.dp)) {
-            Column(Modifier.padding(16.dp)) {
-                Text("🧮 Calculator", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) { OutlinedTextField(a, { a = it }, Modifier.weight(1f), label = { Text("Number") }, singleLine = true); OutlinedTextField(b, { b = it }, Modifier.weight(1f), label = { Text("Number") }, singleLine = true) }
-                Row(Modifier.padding(vertical = 9.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) { listOf("+", "−", "×", "÷").forEach { buttonOp -> FilterChip(selected = op == buttonOp, onClick = { op = buttonOp }, label = { Text(buttonOp, fontSize = 18.sp) }) } }
-                Text("${result?.let { "%.2f".format(Locale.US, it) } ?: if (x != null && y == 0.0 && op == "÷") "Cannot divide by zero" else "—"}", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
-            }
-        }
-        Spacer(Modifier.height(15.dp)); SectionTitle("Formula Library", "Quick revision references")
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) { Column(Modifier.padding(16.dp)) { listOf("Percentage = (part ÷ whole) × 100", "Average = sum ÷ number of values", "Speed = distance ÷ time", "Force = mass × acceleration", "Power = work ÷ time", "Rectangle area = length × width", "Triangle area = ½ × base × height").forEach { Text("• $it", Modifier.padding(vertical = 5.dp)) } } }
-        Spacer(Modifier.height(15.dp)); SectionTitle("Conversions", "Common school references")
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) { Text("1 km = 1000 m\n1 m = 100 cm\n1 kg = 1000 g\n1 L = 1000 mL\n1 hour = 60 minutes", Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        Spacer(Modifier.height(15.dp)); SectionTitle("Multiplication", "7 times table")
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) { Text((1..10).joinToString("\n") { "7 × $it = ${7 * it}" }, Modifier.padding(16.dp), fontWeight = FontWeight.Medium) }
-    }
-}
-
-@Composable
-fun NotesScreen(notes: List<Note>, onChange: (List<Note>) -> Unit) {
-    var title by remember { mutableStateOf("") }; var body by remember { mutableStateOf("") }; var search by remember { mutableStateOf("") }
-    val visible = notes.filter { search.isBlank() || it.title.contains(search, true) || it.body.contains(search, true) }
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("My Notes", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
-        Text("Saved locally on this device", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth().padding(top = 10.dp), label = { Text("Title") }, singleLine = true)
-        OutlinedTextField(body, { body = it }, Modifier.fillMaxWidth().padding(top = 8.dp), label = { Text("Write your note") }, minLines = 3)
-        Button(onClick = { if (title.isNotBlank() || body.isNotBlank()) { onChange(listOf(Note(System.currentTimeMillis(), title.ifBlank { "Untitled" }, body)) + notes); title = ""; body = "" } }, Modifier.fillMaxWidth().padding(vertical = 8.dp), shape = RoundedCornerShape(15.dp)) { Text("Save Note") }
-        OutlinedTextField(search, { search = it }, Modifier.fillMaxWidth().padding(bottom = 8.dp), label = { Text("Search notes") }, singleLine = true)
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(visible, key = { it.id }) { note -> Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) { Column(Modifier.padding(14.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(note.title, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)); TextButton(onClick = { onChange(notes.filterNot { it.id == note.id }) }) { Text("Delete") } }; Text(note.body, color = MaterialTheme.colorScheme.onSurfaceVariant) } } } }
-    }
-}
-
-@Composable
-fun MoreScreen(dark: Boolean, setDark: (Boolean) -> Unit, score: Int, streak: Int, quizzes: Int, tasks: List<Task>, onTasks: (List<Task>) -> Unit, onNavigate: (String) -> Unit) {
-    var taskText by remember { mutableStateOf("") }; var subject by remember { mutableStateOf("General") }; var showTimer by remember { mutableStateOf(false) }; var showCards by remember { mutableStateOf(false) }
-    val done = tasks.count { it.done }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text("Planner & More", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
-        Text("Your study command center", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(14.dp))
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) { Column(Modifier.padding(16.dp)) { Text("📅 Study Planner", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) { OutlinedTextField(taskText, { taskText = it }, Modifier.weight(1f), label = { Text("New task") }, singleLine = true); Button(onClick = { if (taskText.isNotBlank()) { onTasks(tasks + Task(System.currentTimeMillis(), taskText, subject, false)); taskText = "" } }, shape = RoundedCornerShape(13.dp)) { Text("+") } }; Row(Modifier.padding(vertical = 8.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) { listOf("General", "Math", "Science", "Computer", "English").forEach { s -> FilterChip(selected = subject == s, onClick = { subject = s }, label = { Text(s) }) } }; Text("$done/${tasks.size} completed", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp) }
-        }
-        tasks.take(8).forEach { task ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = task.done, onCheckedChange = { checked -> onTasks(tasks.map { if (it.id == task.id) it.copy(done = checked) else it }) }); Column(Modifier.weight(1f)) { Text(task.text, fontWeight = if (task.done) FontWeight.Normal else FontWeight.SemiBold); Text(task.subject, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }; TextButton(onClick = { onTasks(tasks.filterNot { it.id == task.id }) }) { Text("×") } }
-        }
-        Spacer(Modifier.height(10.dp))
-        Button(onClick = { showTimer = !showTimer }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(15.dp)) { Text(if (showTimer) "Hide Focus Timer" else "⏱ Open Focus Timer") }
-        AnimatedVisibility(showTimer, enter = scaleIn() + fadeIn()) { FocusTimer() }
-        Spacer(Modifier.height(8.dp))
-        Button(onClick = { showCards = !showCards }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(15.dp)) { Text(if (showCards) "Hide Flashcards" else "🃏 Open Flashcards") }
-        AnimatedVisibility(showCards, enter = fadeIn() + slideInVertically { it / 3 }) { FlashcardDeck() }
-        Spacer(Modifier.height(15.dp)); SectionTitle("Your Stats", "A quick look at your progress")
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) { Column(Modifier.padding(17.dp)) { Text("Total score: $score", fontWeight = FontWeight.Bold); Text("Streak: 🔥 $streak", Modifier.padding(top = 6.dp)); Text("Quizzes completed: $quizzes", Modifier.padding(top = 6.dp)); Text("Tasks completed: $done / ${tasks.size}", Modifier.padding(top = 6.dp)) } }
-        Spacer(Modifier.height(15.dp)); SectionTitle("Appearance", "Make the app comfortable for you")
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) { Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Dark theme", fontWeight = FontWeight.Bold); Text("Smooth, eye-friendly interface", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp) }; Switch(checked = dark, onCheckedChange = setDark) } }
-        Spacer(Modifier.height(15.dp)); OutlinedButton(onClick = { onNavigate("Home") }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(15.dp)) { Text("Back to Dashboard") }
-        Spacer(Modifier.height(8.dp)); Text("Narendar Hub • offline study companion", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-fun FocusTimer() {
-    var seconds by remember { mutableIntStateOf(25 * 60) }
-    var running by remember { mutableStateOf(false) }
-    LaunchedEffect(running) { while (running && seconds > 0) { delay(1000); seconds-- }; if (seconds == 0) running = false }
-    val min = seconds / 60; val sec = seconds % 60
-    Card(Modifier.fillMaxWidth().padding(top = 10.dp), shape = RoundedCornerShape(22.dp)) { Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text("Focus session", fontWeight = FontWeight.Bold); Text(String.format(Locale.US, "%02d:%02d", min, sec), fontSize = 42.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary); Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Button(onClick = { running = !running }, shape = RoundedCornerShape(14.dp)) { Text(if (running) "Pause" else "Start") }; OutlinedButton(onClick = { running = false; seconds = 25 * 60 }, shape = RoundedCornerShape(14.dp)) { Text("Reset") } } } }
-}
-
-@Composable
-fun FlashcardDeck() {
-    var index by remember { mutableIntStateOf(0) }; var reveal by remember { mutableStateOf(false) }
-    val card = flashCards[index]
-    Card(Modifier.fillMaxWidth().padding(top = 10.dp).clickable { reveal = !reveal }, shape = RoundedCornerShape(24.dp)) { Column(Modifier.padding(24.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) { Text(if (reveal) "ANSWER" else "TERM", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary); Text(if (reveal) card.back else card.front, Modifier.padding(vertical = 22.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center); Text("Tap card to flip • ${index + 1}/${flashCards.size}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant); Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedButton(onClick = { index = (index - 1 + flashCards.size) % flashCards.size; reveal = false }) { Text("‹") }; Button(onClick = { index = (index + 1) % flashCards.size; reveal = false }) { Text("Next") } } } }
-}
-
-private fun notesToJson(notes: List<Note>): String = JSONArray().apply { notes.forEach { put(JSONObject().apply { put("id", it.id); put("title", it.title); put("body", it.body) }) } }.toString()
-private fun tasksToJson(tasks: List<Task>): String = JSONArray().apply { tasks.forEach { put(JSONObject().apply { put("id", it.id); put("text", it.text); put("subject", it.subject); put("done", it.done) }) } }.toString()
-
-private fun loadNotes(prefs: android.content.SharedPreferences): List<Note> = runCatching { val a = JSONArray(prefs.getString("notes", "[]")); (0 until a.length()).map { val o = a.getJSONObject(it); Note(o.getLong("id"), o.getString("title"), o.getString("body")) } }.getOrDefault(emptyList())
-private fun loadTasks(prefs: android.content.SharedPreferences): List<Task> = runCatching { val a = JSONArray(prefs.getString("tasks", "[]")); (0 until a.length()).map { val o = a.getJSONObject(it); Task(o.getLong("id"), o.getString("text"), o.getString("subject"), o.getBoolean("done")) } }.getOrDefault(emptyList())
+private fun loadNotes(p:android.content.SharedPreferences):List<Note>=runCatching{val a=JSONArray(p.getString("notes","[]"));List(a.length()){val o=a.getJSONObject(it);Note(o.getLong("id"),o.getString("title"),o.getString("body"),o.optString("subject","General"),o.optBoolean("pinned",false))}}.getOrDefault(emptyList())
+private fun loadTasks(p:android.content.SharedPreferences):List<Task>=runCatching{val a=JSONArray(p.getString("tasks","[]"));List(a.length()){val o=a.getJSONObject(it);Task(o.getLong("id"),o.getString("text"),o.optString("subject","General"),o.optBoolean("done",false))}}.getOrDefault(emptyList())
+private fun notesJson(v:List<Note>):String=JSONArray().apply{v.forEach{put(JSONObject().apply{put("id",it.id);put("title",it.title);put("body",it.body);put("subject",it.subject);put("pinned",it.pinned)})}}.toString()
+private fun tasksJson(v:List<Task>):String=JSONArray().apply{v.forEach{put(JSONObject().apply{put("id",it.id);put("text",it.text);put("subject",it.subject);put("done",it.done)})}}.toString()
