@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Narendar Hub: stylized N + connected hub nodes -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M28,76 L28,32 L38,32 L70,61 L70,32 L80,32 L80,76 L70,76 L38,47 L38,76 Z" />
+
+    <path
+        android:fillColor="#5EE7FF"
+        android:pathData="M79,22 L91,22 L91,34 L79,34 Z" />
+    <path
+        android:fillColor="#7C5CFF"
+        android:pathData="M91,50 L101,50 L101,60 L91,60 Z" />
+    <path
+        android:fillColor="#35E0A1"
+        android:pathData="M79,74 L91,74 L91,86 L79,86 Z" />
+
+    <path
+        android:fillColor="#5EE7FF"
+        android:pathData="M84,34 L88,34 L88,50 L84,50 Z" />
+    <path
+        android:fillColor="#7C5CFF"
+        android:pathData="M80,58 L92,58 L92,62 L80,62 Z" />
+    <path
+        android:fillColor="#35E0A1"
+        android:pathData="M84,62 L88,62 L88,74 L84,74 Z" />
+</vector>
