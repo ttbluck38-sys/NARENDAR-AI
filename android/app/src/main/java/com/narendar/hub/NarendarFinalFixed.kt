@@ -61,7 +61,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  Column(Modifier.fillMaxSize().padding(16.dp)){
   Text("Study Library",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
   Text("Notes, tasks, flashcards, MCQ bank and focus tools — stored locally.",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=13.sp)
-  Row(Modifier.horizontalScroll(rememberScrollState())){listOf("Notes","Planner","MCQ Bank","Flashcards","Focus").forEachIndexed{index,label->FilterChip(tab==index,{tab=index},label={Text(label)},modifier=Modifier.padding(end=6.dp) )}}
+  Row(Modifier.horizontalScroll(rememberScrollState())){listOf("Notes","Planner","MCQ Bank","Flashcards","Focus","Tools").forEachIndexed{index,label->FilterChip(tab==index,{tab=index},label={Text(label)},modifier=Modifier.padding(end=6.dp) )}}
   Spacer(Modifier.height(10.dp))
   if(tab==0){
    OutlinedTextField(title,{title=it},label={Text("Note title")},modifier=Modifier.fillMaxWidth())
@@ -79,8 +79,10 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   }else if(tab==3){
    if(notes.isEmpty())Text("Create a note first, then it will appear here as a revision flashcard.",color=MaterialTheme.colorScheme.onSurfaceVariant)
    LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(notes.reversed(),key={it.id}){n->Card(Modifier.fillMaxWidth().clickable{revealed=if(n.id in revealed)revealed-n.id else revealed+n.id},shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(18.dp)){Text(if(n.id in revealed)"ANSWER" else "QUESTION",fontSize=11.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(5.dp));Text(n.title,fontWeight=FontWeight.Black,fontSize=17.sp);if(n.id in revealed){Spacer(Modifier.height(8.dp));Text(n.body.ifBlank{"No answer saved yet."},color=MaterialTheme.colorScheme.onSurfaceVariant)}else{Spacer(Modifier.height(8.dp));Text("Tap to reveal answer",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}}}
-  }else{
+  }else if(tab==4){
    FocusTimer()
+  }else{
+   QuickTools()
   }
  }
 }
@@ -139,6 +141,35 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   Card(shape=RoundedCornerShape(30.dp)){Column(Modifier.padding(28.dp),horizontalAlignment=Alignment.CenterHorizontally){Text("FOCUS TIME",fontSize=12.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary);Text("${remaining/60}:${(remaining%60).toString().padStart(2,'0')}",fontSize=48.sp,fontWeight=FontWeight.Black);Text(if(remaining==0)"Session complete 🎉" else if(running)"Stay focused" else "Ready when you are",color=MaterialTheme.colorScheme.onSurfaceVariant)}}
   Spacer(Modifier.height(16.dp))
   Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Button({if(remaining==0)remaining=minutes*60;running=!running}){Text(if(running)"Pause" else "Start")};OutlinedButton({running=false;remaining=minutes*60}){Text("Reset")}}
+ }
+}
+
+@Composable private fun QuickTools(){
+ var tableNumber by remember{mutableStateOf("7")}
+ var left by remember{mutableStateOf("12")}
+ var right by remember{mutableStateOf("4")}
+ var operation by remember{mutableStateOf("+")}
+ val table=tableNumber.toIntOrNull()
+ val result=remember(left,right,operation){val a=left.toDoubleOrNull();val b=right.toDoubleOrNull();if(a==null||b==null)"Enter valid numbers" else when(operation){"+"->(a+b).toString();"-"->(a-b).toString();"×"->(a*b).toString();else->if(b==0.0)"Cannot divide by zero" else (a/b).toString()}}
+ Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())){
+  Text("Quick Study Tools",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+  Text("Offline calculator, multiplication tables and formula cards.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+  Spacer(Modifier.height(10.dp))
+  Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
+   Text("Multiplication Table",fontWeight=FontWeight.Black)
+   OutlinedTextField(tableNumber,{tableNumber=it.filter{ch->ch.isDigit()}.take(8)},label={Text("Enter any whole number")},singleLine=true,modifier=Modifier.fillMaxWidth())
+   if(table!=null){(1..10).forEach{n->Text("$table × $n = ${table*n}",fontWeight=FontWeight.Medium,modifier=Modifier.padding(vertical=2.dp))}}
+  }}
+  Spacer(Modifier.height(10.dp))
+  Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
+   Text("Basic Calculator",fontWeight=FontWeight.Black)
+   Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){OutlinedTextField(left,{left=it},label={Text("Number A")},modifier=Modifier.weight(1f),singleLine=true);OutlinedTextField(right,{right=it},label={Text("Number B")},modifier=Modifier.weight(1f),singleLine=true)}
+   Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf("+","-","×","÷").forEach{op->FilterChip(operation==op,{operation=op},label={Text(op)})}}
+   Text("Result: $result",fontSize=20.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
+  }}
+  Spacer(Modifier.height(10.dp))
+  Text("Formula Cards",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
+  listOf("Rectangle area" to "A = length × width","Rectangle perimeter" to "P = 2 × (length + width)","Speed" to "speed = distance ÷ time","Density" to "density = mass ÷ volume","Ohm’s law" to "voltage = current × resistance","Circle circumference" to "C = 2 × π × radius","Average" to "average = total ÷ number of values").forEach{(name,formula)->Card(Modifier.fillMaxWidth().padding(vertical=3.dp),shape=RoundedCornerShape(15.dp)){Column(Modifier.padding(12.dp)){Text(name,fontWeight=FontWeight.Bold);Text(formula,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}
  }
 }
 
