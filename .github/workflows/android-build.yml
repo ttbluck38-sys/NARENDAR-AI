@@ -34,8 +34,9 @@ jobs:
           git fetch origin main --depth=1
           mkdir -p /tmp/studypilot-logo
           git show origin/main:file_00000000567081f4a05fb87d45adc140.png > /tmp/studypilot-logo/source.png
-          python3 -m pip install --user Pillow
-          python3 .github/scripts/crop_studypilot_logo.py /tmp/studypilot-logo/source.png android/app/src/main/res/drawable-nodpi/studypilot_logo.png
+          python3 -m venv /tmp/studypilot-logo-venv
+          /tmp/studypilot-logo-venv/bin/pip install Pillow
+          /tmp/studypilot-logo-venv/bin/python .github/scripts/crop_studypilot_logo.py /tmp/studypilot-logo/source.png android/app/src/main/res/drawable-nodpi/studypilot_logo.png
 
       - name: Build debug APK
         working-directory: android
