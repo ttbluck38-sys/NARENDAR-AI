@@ -204,14 +204,14 @@ private fun make(g:Int,s:String,d:String,i:Int):M{
  val topic=topics[i%topics.size]
  if(s=="Mathematics")return math(g,d,topic,n,b)
  val fs=facts(s)
- val idx=(i*7+g*3+diffCode*5)%fs.size
+ val idx=(i+g*3+diffCode*5)%fs.size
  val f=fs[idx]
  val wrong=listOf(fs[(idx+1)%fs.size].term,fs[(idx+2)%fs.size].term,fs[(idx+3)%fs.size].term)
  val slot=(i+g+diffCode)%4
  val opts=MutableList(4){""};opts[slot]=f.term
  var wi=0;for(k in 0..3)if(k!=slot){opts[k]=wrong[wi];wi++}
  val stems=listOf("Which term matches this definition: ${f.meaning}?","Class $g $s • $topic: choose the term described by “${f.meaning}”.","A learner writes clue $n: “${f.meaning}”. Which answer fits?","Select the best concept for this meaning: ${f.meaning}.","During a $topic activity, the teacher says “${f.meaning}”. What is being described?","Which $s term is correctly matched to this description: ${f.meaning}?","Review item $n: identify the term for “${f.meaning}”.","In difficulty $d practice, which term means “${f.meaning}”?")
- val question="${stems[(i/2)%stems.size]}  (Item $n)"
+ val question="${stems[i%stems.size]}  (Item $n)"
  return M(questionId(g,s,d,n),g,s,d,topic,question,opts,slot,"Correct answer: ${f.term}. Meaning: ${f.meaning}. Topic: $topic. Review the definition and compare it with the other choices.")
 }
 private fun math(g:Int,d:String,t:String,n:Int,b:Int):M{
