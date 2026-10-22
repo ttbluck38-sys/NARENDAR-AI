@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.FontWeight
@@ -59,46 +60,57 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var revealed by remember{mutableStateOf(setOf<Long>())}
  Column(Modifier.fillMaxSize().padding(16.dp)){
   Text("Study Library",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
-  Text("Save notes, plan study sessions and revise with flashcards.",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=13.sp)
-  Row(Modifier.horizontalScroll(rememberScrollState())){listOf("Notes","Planner","MCQ Bank","Flashcards").forEachIndexed{index,label->FilterChip(tab==index,{tab=index},label={Text(label)},modifier=Modifier.padding(end=6.dp))}}
+  Text("Notes, tasks, flashcards, MCQ bank and focus tools — stored locally.",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=13.sp)
+  Row(Modifier.horizontalScroll(rememberScrollState())){listOf("Notes","Planner","MCQ Bank","Flashcards","Focus").forEachIndexed{index,label->FilterChip(tab==index,{tab=index},label={Text(label)},modifier=Modifier.padding(end=6.dp) )}}
   Spacer(Modifier.height(10.dp))
   if(tab==0){
    OutlinedTextField(title,{title=it},label={Text("Note title")},modifier=Modifier.fillMaxWidth())
    Spacer(Modifier.height(7.dp));OutlinedTextField(body,{body=it},label={Text("Study note / answer")},modifier=Modifier.fillMaxWidth().height(120.dp))
    Spacer(Modifier.height(7.dp));Button({if(title.isNotBlank()){saveNotes(notes+Note(System.currentTimeMillis(),title,body));title="";body=""}},modifier=Modifier.fillMaxWidth()){Text("SAVE NOTE")}
    Spacer(Modifier.height(10.dp))
-   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){items(notes.reversed(),key={it.id}){n->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(15.dp)){Text(n.title,fontWeight=FontWeight.Black);Text(n.body,fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Text("DELETE",Modifier.clickable{saveNotes(notes.filterNot{it.id==n.id})}.padding(top=7.dp),fontSize=11.sp,color=palette[4],fontWeight=FontWeight.Bold)}}}}
+   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(notes.reversed(),key={it.id}){n->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(15.dp)){Text(n.title,fontWeight=FontWeight.Black);Text(n.body,fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Text("DELETE",Modifier.clickable{saveNotes(notes.filterNot{it.id==n.id})}.padding(top=7.dp),fontSize=11.sp,color=palette[4],fontWeight=FontWeight.Bold)}}}}
   }else if(tab==1){
    OutlinedTextField(taskText,{taskText=it},label={Text("New study task")},modifier=Modifier.fillMaxWidth())
    Spacer(Modifier.height(7.dp));Button({if(taskText.isNotBlank()){saveTasks(tasks+Task(System.currentTimeMillis(),taskText,false));taskText=""}},modifier=Modifier.fillMaxWidth()){Text("ADD TASK")}
    Spacer(Modifier.height(10.dp))
-   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){items(tasks,key={it.id}){t->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Row(Modifier.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Checkbox(t.done,{v->saveTasks(tasks.map{if(it.id==t.id)it.copy(done=v)else it})});Text(t.text,Modifier.weight(1f),fontWeight=FontWeight.Bold);Text("✕",Modifier.clickable{saveTasks(tasks.filterNot{it.id==t.id})})}}}}
+   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(tasks,key={it.id}){t->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Row(Modifier.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Checkbox(t.done,{v->saveTasks(tasks.map{if(it.id==t.id)it.copy(done=v)else it})});Text(t.text,Modifier.weight(1f),fontWeight=FontWeight.Bold);Text("✕",Modifier.clickable{saveTasks(tasks.filterNot{it.id==t.id})})}}}}
   }else if(tab==2){
    QuestionBank(g,Modifier.weight(1f))
-  }else{
+  }else if(tab==3){
    if(notes.isEmpty())Text("Create a note first, then it will appear here as a revision flashcard.",color=MaterialTheme.colorScheme.onSurfaceVariant)
-   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){items(notes.reversed(),key={it.id}){n->Card(Modifier.fillMaxWidth().clickable{revealed=if(n.id in revealed)revealed-n.id else revealed+n.id},shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(18.dp)){Text(if(n.id in revealed)"ANSWER" else "QUESTION",fontSize=11.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(5.dp));Text(n.title,fontWeight=FontWeight.Black,fontSize=17.sp);if(n.id in revealed){Spacer(Modifier.height(8.dp));Text(n.body.ifBlank{"No answer saved yet."},color=MaterialTheme.colorScheme.onSurfaceVariant)}else{Spacer(Modifier.height(8.dp));Text("Tap to reveal answer",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}}}
+   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(notes.reversed(),key={it.id}){n->Card(Modifier.fillMaxWidth().clickable{revealed=if(n.id in revealed)revealed-n.id else revealed+n.id},shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(18.dp)){Text(if(n.id in revealed)"ANSWER" else "QUESTION",fontSize=11.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(5.dp));Text(n.title,fontWeight=FontWeight.Black,fontSize=17.sp);if(n.id in revealed){Spacer(Modifier.height(8.dp));Text(n.body.ifBlank{"No answer saved yet."},color=MaterialTheme.colorScheme.onSurfaceVariant)}else{Spacer(Modifier.height(8.dp));Text("Tap to reveal answer",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}}}
+  }else{
+   FocusTimer()
   }
  }
 }
 
 @Composable private fun QuestionBank(selectedGrade:Int,modifier:Modifier=Modifier){
+ val context=LocalContext.current
+ val prefs=remember{context.getSharedPreferences("studypilot_bank",Context.MODE_PRIVATE)}
  var g by remember(selectedGrade){mutableIntStateOf(if(selectedGrade in 1..9)selectedGrade else 1)}
  var subject by remember{mutableStateOf("Mathematics")}
  var difficulty by remember{mutableStateOf("Easy")}
  var page by remember{mutableIntStateOf(0)}
- val questions=remember(g,subject,difficulty,page){bank(g,subject,difficulty,2500).drop(page*25).take(25)}
+ var query by remember{mutableStateOf("")}
+ var savedOnly by remember{mutableStateOf(false)}
+ var bookmarks by remember{mutableStateOf(prefs.getStringSet("bookmarks",emptySet())?.toSet()?:emptySet())}
+ val all=remember(g,subject,difficulty){bank(g,subject,difficulty,2500)}
+ val filtered=remember(all,query,savedOnly,bookmarks){all.filter{q->(query.isBlank()||q.q.contains(query,true)||q.opts.any{it.contains(query,true)}||q.exp.contains(query,true))&&(!savedOnly||q.id.toString() in bookmarks)}}
+ val pageCount=maxOf(1,(filtered.size+24)/25)
+ val questions=remember(filtered,page){filtered.drop(page*25).take(25)}
  Column(modifier.fillMaxSize()){
   Text("MCQ Question Bank",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
-  Text("2,500 generated items per class × subject × difficulty. Review content before exams.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-  Spacer(Modifier.height(8.dp))
+  Text("2,500 generated items per class × subject × difficulty. Curriculum review is still needed.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+  Spacer(Modifier.height(7.dp))
   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(5.dp)){(1..9).forEach{n->FilterChip(g==n,{g=n;page=0},label={Text(if(n==9)"9+" else "$n")})}}
   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(5.dp)){subs.forEach{(name,_)->FilterChip(subject==name,{subject=name;page=0},label={Text(name)})}}
-  Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){listOf("Easy","Medium","Hard").forEach{d->FilterChip(difficulty==d,{difficulty=d;page=0},label={Text(d)})}}
-  Text("Items ${page*25+1}–${minOf((page+1)*25,2500)} of 2,500  •  Page ${page+1}/100",fontSize=12.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(vertical=6.dp))
+  Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){listOf("Easy","Medium","Hard").forEach{d->FilterChip(difficulty==d,{difficulty=d;page=0},label={Text(d)})};FilterChip(savedOnly,{savedOnly=!savedOnly;page=0},label={Text("★ Bookmarks")})}
+  OutlinedTextField(query,{query=it;page=0},label={Text("Search questions, options or explanations")},singleLine=true,modifier=Modifier.fillMaxWidth())
+  Text("Showing ${if(filtered.isEmpty())0 else page*25+1}–${minOf((page+1)*25,filtered.size)} of ${filtered.size} matches • Page ${page+1}/$pageCount",fontSize=11.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(vertical=5.dp))
   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){
    items(questions,key={it.id}){q->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(13.dp)){
-    Text("Class ${q.grade} • ${q.subject} • ${q.diff} • ${q.topic}",fontSize=10.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)
+    Row(verticalAlignment=Alignment.CenterVertically){Text("Class ${q.grade} • ${q.subject} • ${q.diff} • ${q.topic}",fontSize=10.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,modifier=Modifier.weight(1f));Text(if(q.id.toString() in bookmarks)"★ Saved" else "☆ Save",Modifier.clickable{val next=bookmarks.toMutableSet();if(q.id.toString() in next)next.remove(q.id.toString())else next.add(q.id.toString());bookmarks=next;prefs.edit().putStringSet("bookmarks",next).apply()}.padding(4.dp),fontSize=12.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)}
     Spacer(Modifier.height(5.dp));Text(q.q,fontWeight=FontWeight.Bold)
     q.opts.forEachIndexed{ix,opt->Text("${'A'+ix}. $opt",fontSize=13.sp,color=if(ix==q.ans)Color(0xFF008A68)else MaterialTheme.colorScheme.onSurface,modifier=Modifier.padding(top=3.dp))}
     Spacer(Modifier.height(5.dp));Text("Answer: ${q.opts[q.ans]}",fontWeight=FontWeight.Black,color=Color(0xFF008A68),fontSize=13.sp)
@@ -107,9 +119,26 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   }
   Row(verticalAlignment=Alignment.CenterVertically,modifier=Modifier.padding(top=5.dp)){
    OutlinedButton(onClick={page=(page-1).coerceAtLeast(0)},enabled=page>0){Text("← Previous")}
-   Spacer(Modifier.weight(1f));Text("${page+1}/100",fontWeight=FontWeight.Bold)
-   Spacer(Modifier.weight(1f));Button(onClick={page=(page+1).coerceAtMost(99)},enabled=page<99){Text("Next →")}
+   Spacer(Modifier.weight(1f));Text("${page+1}/$pageCount",fontWeight=FontWeight.Bold)
+   Spacer(Modifier.weight(1f));Button(onClick={page=(page+1).coerceAtMost(pageCount-1)},enabled=page<pageCount-1){Text("Next →")}
   }
+ }
+}
+
+@Composable private fun FocusTimer(){
+ var minutes by remember{mutableIntStateOf(25)}
+ var remaining by remember{mutableIntStateOf(25*60)}
+ var running by remember{mutableStateOf(false)}
+ LaunchedEffect(running){while(running&&remaining>0){delay(1000);if(running)remaining=(remaining-1).coerceAtLeast(0)};if(remaining==0)running=false}
+ Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),horizontalAlignment=Alignment.CenterHorizontally){
+  Text("Focus Studio",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+  Text("Offline Pomodoro timer • take a short break between sessions",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,textAlign=TextAlign.Center)
+  Spacer(Modifier.height(18.dp))
+  Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf(15,25,45).forEach{m->FilterChip(minutes==m,{minutes=m;remaining=m*60;running=false},label={Text("$m min")})}}
+  Spacer(Modifier.height(18.dp))
+  Card(shape=RoundedCornerShape(30.dp)){Column(Modifier.padding(28.dp),horizontalAlignment=Alignment.CenterHorizontally){Text("FOCUS TIME",fontSize=12.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary);Text("${remaining/60}:${(remaining%60).toString().padStart(2,'0')}",fontSize=48.sp,fontWeight=FontWeight.Black);Text(if(remaining==0)"Session complete 🎉" else if(running)"Stay focused" else "Ready when you are",color=MaterialTheme.colorScheme.onSurfaceVariant)}}
+  Spacer(Modifier.height(16.dp))
+  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Button({if(remaining==0)remaining=minutes*60;running=!running}){Text(if(running)"Pause" else "Start")};OutlinedButton({running=false;remaining=minutes*60}){Text("Reset")}}
  }
 }
 
