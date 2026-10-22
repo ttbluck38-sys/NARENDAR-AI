@@ -4,29 +4,15 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
-    <!-- Narendar Hub: stylized N + connected hub nodes -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M28,76 L28,32 L38,32 L70,61 L70,32 L80,32 L80,76 L70,76 L38,47 L38,76 Z" />
-
-    <path
-        android:fillColor="#5EE7FF"
-        android:pathData="M79,22 L91,22 L91,34 L79,34 Z" />
-    <path
-        android:fillColor="#7C5CFF"
-        android:pathData="M91,50 L101,50 L101,60 L91,60 Z" />
-    <path
-        android:fillColor="#35E0A1"
-        android:pathData="M79,74 L91,74 L91,86 L79,86 Z" />
-
-    <path
-        android:fillColor="#5EE7FF"
-        android:pathData="M84,34 L88,34 L88,50 L84,50 Z" />
-    <path
-        android:fillColor="#7C5CFF"
-        android:pathData="M80,58 L92,58 L92,62 L80,62 Z" />
-    <path
-        android:fillColor="#35E0A1"
-        android:pathData="M84,62 L88,62 L88,74 L84,74 Z" />
+    <!-- Temporary StudyPilot AI book mark; replace with the user's original generated logo when uploaded. -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M17,30 C29,25 42,28 52,36 L52,79 C41,71 29,69 17,75 Z" />
+    <path android:fillColor="#DCEBFF"
+        android:pathData="M56,36 C66,28 79,25 91,30 L91,75 C79,69 67,71 56,79 Z" />
+    <path android:fillColor="#315EFB"
+        android:pathData="M53,36 L55,36 L55,81 L53,81 Z" />
+    <path android:fillColor="#5EE7FF"
+        android:pathData="M70,18 L74,28 L85,29 L77,36 L79,47 L70,41 L61,47 L63,36 L55,29 L66,28 Z" />
+    <path android:fillColor="#35E0A1"
+        android:pathData="M23,83 L85,83 L81,89 L27,89 Z" />
 </vector>
