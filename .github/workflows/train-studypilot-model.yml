@@ -3,13 +3,13 @@ name: Train StudyPilot Tiny Model
 on:
   push:
     branches: [studypilot-mcq-fix]
-    paths: ['ai/**']
+    paths: ['ai/README.md']
   workflow_dispatch:
     inputs:
       steps:
         description: "Training steps (small CPU-safe range)"
         required: true
-        default: "800"
+        default: "200"
         type: choice
         options:
           - "200"
@@ -41,7 +41,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Train tiny model from scratch
-        run: python train.py --steps "${{ inputs.steps }}"
+        run: python train.py --steps "${{ inputs.steps || '200' }}"
       - name: Smoke-test checkpoint
         run: python evaluate.py
       - name: Upload model checkpoint
