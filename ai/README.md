@@ -15,7 +15,7 @@ No API key or external AI service is used. This prototype is not ChatGPT-level a
 Python 3.10+:
 ```bash
 pip install -r requirements.txt
-python train.py --steps 1200
+python train.py --steps 200
 python evaluate.py --checkpoint artifacts/studypilot_tiny.pt
 python chat.py --checkpoint artifacts/studypilot_tiny.pt
 ```
@@ -31,3 +31,5 @@ Run GitHub Actions → **Train StudyPilot Tiny Model** → Run workflow to train
 
 
 Training pipeline validation run initiated by a repository change; see the GitHub Actions workflow history for logs and artifact status.
+
+Initial training validation is ready to run from the latest branch state.
