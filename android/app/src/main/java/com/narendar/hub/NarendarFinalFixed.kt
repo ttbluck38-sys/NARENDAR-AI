@@ -22,6 +22,7 @@ import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.abs
+import com.narendar.hub.ai.StudyPilotAIEngine
 
 private data class M(val id:Int,val grade:Int,val subject:String,val diff:String,val topic:String,val q:String,val opts:List<String>,val ans:Int,val exp:String)
 private data class Note(val id:Long,val title:String,val body:String)
@@ -39,7 +40,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  LaunchedEffect(toast){if(toast.isNotEmpty()){delay(1500);toast=""}}
  MaterialTheme(colorScheme=if(dark)darkColorScheme(primary=Color(0xFF9AB8FF),secondary=Color(0xFF70E0BE),tertiary=Color(0xFFFF9DC7))else lightColorScheme(primary=palette[0],secondary=palette[2],tertiary=palette[4],surface=Color(0xFFF7F8FC))){
   if(page=="pick"){Pick(grade){grade=it;p.edit().putInt("grade",it).apply();page="home"};return@MaterialTheme}
-  Scaffold(topBar={CenterAlignedTopAppBar(title={Text("StudyPilot AI",fontWeight=FontWeight.Black)})},bottomBar={NavigationBar{listOf("home" to "⌂","learn" to "▣","quiz" to "✓","library" to "▤","profile" to "●").forEach{(k,ic)->NavigationBarItem(page==k,{page=k},icon={Text(ic)},label={Text(k.replaceFirstChar{it.uppercase()})})}}}){pad->Box(Modifier.fillMaxSize().padding(pad)){AnimatedContent(page,label="page"){s->when(s){"home"->Home(grade,xp,correct,tried,tasks.count{!it.done},notes.size){page=it};"learn"->Learn(grade){page="quiz"};"quiz"->Quiz(grade,::record){toast=it};"library"->Library(grade,notes,tasks,::saveNotes,::saveTasks);"profile"->Profile(grade,xp,correct,tried,dark,{dark=it;p.edit().putBoolean("dark",it).apply()}){grade=-1;p.edit().putInt("grade",-1).apply();page="pick"}}};AnimatedVisibility(toast.isNotEmpty(),enter=slideInVertically{it}+fadeIn(),exit=fadeOut(),modifier=Modifier.align(Alignment.BottomCenter).padding(8.dp)){Surface(shape=RoundedCornerShape(18.dp),tonalElevation=8.dp){Text(toast,Modifier.padding(14.dp),fontWeight=FontWeight.Bold)}}}}
+  Scaffold(topBar={CenterAlignedTopAppBar(title={Text("StudyPilot AI",fontWeight=FontWeight.Black)})},bottomBar={NavigationBar{listOf("home" to "⌂","learn" to "▣","quiz" to "✓","tutor" to "✦","library" to "▤","profile" to "●").forEach{(k,ic)->NavigationBarItem(page==k,{page=k},icon={Text(ic)},label={Text(k.replaceFirstChar{it.uppercase()})})}}}){pad->Box(Modifier.fillMaxSize().padding(pad)){AnimatedContent(page,label="page"){s->when(s){"home"->Home(grade,xp,correct,tried,tasks.count{!it.done},notes.size){page=it};"learn"->Learn(grade){page="quiz"};"quiz"->Quiz(grade,::record){toast=it};"library"->Library(grade,notes,tasks,::saveNotes,::saveTasks);"tutor"->Tutor(grade);"profile"->Profile(grade,xp,correct,tried,dark,{dark=it;p.edit().putBoolean("dark",it).apply()}){grade=-1;p.edit().putInt("grade",-1).apply();page="pick"}}};AnimatedVisibility(toast.isNotEmpty(),enter=slideInVertically{it}+fadeIn(),exit=fadeOut(),modifier=Modifier.align(Alignment.BottomCenter).padding(8.dp)){Surface(shape=RoundedCornerShape(18.dp),tonalElevation=8.dp){Text(toast,Modifier.padding(14.dp),fontWeight=FontWeight.Bold)}}}}
  }
 }
 
@@ -283,3 +284,53 @@ private fun loadNotes(p:android.content.SharedPreferences):List<Note>{return try
 private fun loadTasks(p:android.content.SharedPreferences):List<Task>{return try{val a=JSONArray(p.getString("tasks","[]"));List(a.length()){val o=a.getJSONObject(it);Task(o.getLong("id"),o.getString("text"),o.getBoolean("done"))}}catch(_:Exception){emptyList()}}
 private fun notesJson(v:List<Note>)=JSONArray().apply{v.forEach{put(JSONObject().apply{put("id",it.id);put("title",it.title);put("body",it.body)})}}.toString()
 private fun tasksJson(v:List<Task>)=JSONArray().apply{v.forEach{put(JSONObject().apply{put("id",it.id);put("text",it.text);put("done",it.done)})}}.toString()
+
+
+private data class TutorMessage(val id: Long, val fromUser: Boolean, val text: String, val topic: String = "")
+
+@Composable
+private fun Tutor(grade: Int) {
+    var input by remember { mutableStateOf("") }
+    var history by remember {
+        mutableStateOf(listOf(TutorMessage(1L, false,
+            "Hi! I'm StudyPilot's offline tutor preview. Try: 'what is photosynthesis' or 'what is fotosinthesis'. I currently support a limited set of reviewed topics.")))
+    }
+    Column(Modifier.fillMaxSize().padding(14.dp)) {
+        Text("StudyPilot Tutor", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+        Text("Offline preview • typo-tolerant • no API key", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+        Spacer(Modifier.height(8.dp))
+        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+            Text("This first version answers from a small curated knowledge set. The separately trained Transformer is experimental and is not connected to this chat yet.",
+                Modifier.padding(12.dp), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(Modifier.height(8.dp))
+        LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(history, key = { it.id }) { item ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = if (item.fromUser) Arrangement.End else Arrangement.Start) {
+                    Card(Modifier.widthIn(max = 320.dp), shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = if (item.fromUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text(if (item.fromUser) "You" else if (item.topic.isNotBlank()) item.topic else "StudyPilot", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Spacer(Modifier.height(3.dp))
+                            Text(item.text, fontSize = 14.sp)
+                        }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(value = input, onValueChange = { input = it },
+            modifier = Modifier.fillMaxWidth(), label = { Text("Ask a study question") },
+            placeholder = { Text("e.g. what is fotosinthesis") }, maxLines = 3)
+        Spacer(Modifier.height(6.dp))
+        Button(onClick = {
+            val question = input.trim()
+            if (question.isNotEmpty()) {
+                val answer = StudyPilotAIEngine.ask(question, classLevel = if (grade in 1..12) grade else null)
+                history = history + TutorMessage(System.currentTimeMillis(), true, question) +
+                    TutorMessage(System.currentTimeMillis() + 1, false, answer.text, answer.topic)
+                input = ""
+            }
+        }, modifier = Modifier.fillMaxWidth()) { Text("ASK STUDYPILOT") }
+    }
+}
