@@ -62,7 +62,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var score by remember{mutableIntStateOf(0)}
  var seed by remember{mutableIntStateOf(0)}
  val maxG=if(g<0)9 else g
- val qs=remember(sub,diff,size,seed,g){test(maxG,sub,diff,size,seed)}
+ val qs=remember(sub,diff,size,seed,g){test(g,sub,diff,size,seed)}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
   Text("Quiz Arena",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
   Text("Practice questions with explanations and read-aloud support. Choose 2,500 for a long mega test.",color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -231,11 +231,11 @@ private fun test(maxG:Int,s:String,d:String,size:Int,seed:Int):List<M>{
  val ds=if(d=="Mixed")listOf("Easy","Medium","Hard")else listOf(d)
  val all=ArrayList<M>()
  if(size>=2500){
-  val targetGrade=maxG.coerceIn(1,9)
+  val targetGrade=if(maxG in 1..9) maxG else 8
   for(x in ds)all.addAll(bank(targetGrade,s,x,2500))
  }else{
   val poolSize=minOf(2500,maxOf(40,size*2))
-  for(g in 1..maxG.coerceIn(1,9))for(x in ds)all.addAll(bank(g,s,x,poolSize))
+  for(g in (if(maxG<1) 1..9 else 1..maxG.coerceAtMost(9)))for(x in ds)all.addAll(bank(g,s,x,poolSize))
  }
  return all.shuffled(kotlin.random.Random(seed*7919+s.hashCode())).take(size).mapIndexed{index,q->shuffleOptions(q,seed*31+index+s.hashCode())}
 }
