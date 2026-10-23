@@ -28,3 +28,6 @@ Run GitHub Actions → **Train StudyPilot Tiny Model** → Run workflow to train
 3. Export to a supported mobile runtime and match tokenizer exactly.
 4. Integrate tutor UI and test on a real Android 8.1 device.
 5. Do not describe a tiny prototype as equivalent to a frontier assistant.
+
+
+Training pipeline validation run initiated by a repository change; see the GitHub Actions workflow history for logs and artifact status.
