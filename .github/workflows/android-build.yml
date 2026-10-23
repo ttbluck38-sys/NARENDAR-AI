@@ -38,6 +38,28 @@ jobs:
           /tmp/studypilot-logo-venv/bin/pip install Pillow
           /tmp/studypilot-logo-venv/bin/python .github/scripts/crop_studypilot_logo.py /tmp/studypilot-logo/source.png android/app/src/main/res/drawable-nodpi/studypilot_logo.png
 
+      - name: Configure Supabase endpoint for this build (optional until secrets are added)
+        working-directory: android/app/src/main/java/com/narendar/hub
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          path = Path("AiConfig.kt")
+          text = path.read_text()
+          url = os.environ.get("SUPABASE_URL", "").strip()
+          key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+          if url and key:
+              text = text.replace('https://YOUR_PROJECT_REF.supabase.co', url.rstrip('/'))
+              text = text.replace('YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY', key)
+              path.write_text(text)
+              print("Supabase app configuration injected for this build.")
+          else:
+              print("Supabase GitHub secrets are not set; APK will build with AI setup instructions.")
+          PY
+
       - name: Build debug APK
         working-directory: android
         run: gradle assembleDebug --no-daemon
