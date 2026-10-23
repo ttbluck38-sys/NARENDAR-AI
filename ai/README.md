@@ -33,3 +33,5 @@ Run GitHub Actions → **Train StudyPilot Tiny Model** → Run workflow to train
 Training pipeline validation run initiated by a repository change; see the GitHub Actions workflow history for logs and artifact status.
 
 Initial training validation is ready to run from the latest branch state.
+
+Initial training validation is ready to run from the latest branch state.
