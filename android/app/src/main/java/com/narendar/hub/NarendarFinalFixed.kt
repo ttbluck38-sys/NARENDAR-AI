@@ -230,8 +230,13 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 private fun test(maxG:Int,s:String,d:String,size:Int,seed:Int):List<M>{
  val ds=if(d=="Mixed")listOf("Easy","Medium","Hard")else listOf(d)
  val all=ArrayList<M>()
- val poolSize=minOf(2500,maxOf(40,size*2))
- for(g in 1..maxG)for(x in ds)all.addAll(bank(g,s,x,poolSize))
+ if(size>=2500){
+  val targetGrade=maxG.coerceIn(1,9)
+  for(x in ds)all.addAll(bank(targetGrade,s,x,2500))
+ }else{
+  val poolSize=minOf(2500,maxOf(40,size*2))
+  for(g in 1..maxG.coerceIn(1,9))for(x in ds)all.addAll(bank(g,s,x,poolSize))
+ }
  return all.shuffled(kotlin.random.Random(seed*7919+s.hashCode())).take(size).mapIndexed{index,q->shuffleOptions(q,seed*31+index+s.hashCode())}
 }
 private fun bank(g:Int,s:String,d:String,n:Int):List<M> = List(n){i->make(g,s,d,i)}
