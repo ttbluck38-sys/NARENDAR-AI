@@ -46,7 +46,7 @@ object StudyPilotAIEngine {
     private fun normalizeBasic(input: String) = input.lowercase().replace(Regex("[^a-z0-9%\\s]"), " ").replace(Regex("\\s+"), " ").trim()
     private fun normalize(input: String): String {
         var s = normalizeBasic(input)
-        val replacements = listOf("kya hota hai" to "what is", "kya hota" to "what is", "kya hai" to "what is", "kya h" to "what is", "samjhao" to "explain", "batao" to "explain", "kyun" to "why", "kaise" to "how", "kese" to "how")
+        val replacements = listOf("plants food kaise banate hain" to "plants make food", "plants khana kaise banate hain" to "plants make food", "kya hota hai" to "what is", "kya hota" to "what is", "kya hai" to "what is", "kya h" to "what is", "samjhao" to "explain", "batao" to "explain", "kyun" to "why", "kaise" to "how", "kese" to "how")
         replacements.forEach { (from,to) -> s = s.replace(from,to) }
         return s.split(" ").filter { it.isNotBlank() }.joinToString(" ") { word ->
             if (word.length < 4 || word.all(Char::isDigit)) word
