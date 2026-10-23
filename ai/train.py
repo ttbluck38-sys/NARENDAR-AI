@@ -19,9 +19,9 @@ def load_corpus(path):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--steps", type=int, default=1200)
-    p.add_argument("--batch-size", type=int, default=16)
-    p.add_argument("--block-size", type=int, default=96)
+    p.add_argument("--steps", type=int, default=200)
+    p.add_argument("--batch-size", type=int, default=8)
+    p.add_argument("--block-size", type=int, default=48)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--dataset", default=str(ROOT / "dataset/seed.jsonl"))
     p.add_argument("--out", default=str(ROOT / "artifacts/studypilot_tiny.pt"))
