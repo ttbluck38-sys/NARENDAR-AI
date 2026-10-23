@@ -1,0 +1,1 @@
+"""StudyPilot AI research prototype."""
