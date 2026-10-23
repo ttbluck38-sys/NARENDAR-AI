@@ -35,3 +35,5 @@ Training pipeline validation run initiated by a repository change; see the GitHu
 Initial training validation is ready to run from the latest branch state.
 
 Initial training validation is ready to run from the latest branch state.
+
+CPU-only PyTorch installation has been configured; rerunning initial model-training validation.
