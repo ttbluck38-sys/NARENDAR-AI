@@ -1,0 +1,4 @@
+project_id = "studypilot-ai"
+
+[functions.study-explain]
+verify_jwt = false
