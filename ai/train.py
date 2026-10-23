@@ -55,7 +55,7 @@ def main():
             print(f"step={step}/{a.steps} train_loss={loss.item():.4f} val_loss={vl.item():.4f}", flush=True)
     out = Path(a.out); out.parent.mkdir(parents=True,exist_ok=True)
     torch.save({"state_dict":model.cpu().state_dict(),"vocab":vocab,"block_size":a.block_size,
-        "d_model":128,"nhead":4,"layers":3,"corpus_chars":len(text),
+        "d_model":32,"nhead":2,"layers":1,"corpus_chars":len(text),
         "warning":"Research prototype; not factually reliable without further training/evaluation."},out)
     (out.parent/"tokenizer.json").write_text(json.dumps({"vocab":vocab,"type":"character"},ensure_ascii=False,indent=2),encoding="utf-8")
     print(f"Saved checkpoint: {out}")
