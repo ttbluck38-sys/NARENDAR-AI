@@ -3,8 +3,8 @@ import torch
 from torch import nn
 
 class TinyLanguageModel(nn.Module):
-    def __init__(self, vocab_size: int, block_size: int = 128, d_model: int = 128,
-                 nhead: int = 4, layers: int = 3, dropout: float = 0.1):
+    def __init__(self, vocab_size: int, block_size: int = 48, d_model: int = 32,
+                 nhead: int = 2, layers: int = 1, dropout: float = 0.1):
         super().__init__()
         self.block_size = block_size
         self.token_embedding = nn.Embedding(vocab_size, d_model)
