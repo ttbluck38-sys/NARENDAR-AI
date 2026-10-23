@@ -86,7 +86,8 @@ object StudyPilotAIEngine {
         return Answer(match.title, (if (sindhi) match.sindhi else match.urdu) + gradeSuffix, 0.92)
     }
 
-    fun ask(message: String, subject: String? = null, classLevel: Int? = null): Answer {\n        localizedAnswer(message, classLevel)?.let { return it }
+    fun ask(message: String, subject: String? = null, classLevel: Int? = null): Answer {
+        localizedAnswer(message, classLevel)?.let { return it }
         val normalized = normalize(message)
         if (normalized.isBlank()) return Answer("Clarification", "Type a question or topic and I'll try to help.", 1.0, true)
         val ranked = concepts.map { concept ->
