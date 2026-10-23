@@ -232,14 +232,14 @@ private fun test(maxG:Int,s:String,d:String,size:Int,seed:Int):List<M>{
  val all=ArrayList<M>()
  if(size>=2500){
   val targetGrade=if(maxG in 1..9) maxG else 8
-  for(x in ds)all.addAll(bank(targetGrade,s,x,2500))
+  for(x in ds)all.addAll(bank(targetGrade,s,x,2500,kotlin.math.abs(seed*97+x.hashCode())%2000))
  }else{
   val poolSize=minOf(2500,maxOf(40,size*2))
-  for(g in (if(maxG<1) 1..9 else 1..maxG.coerceAtMost(9)))for(x in ds)all.addAll(bank(g,s,x,poolSize))
+  for(g in (if(maxG<1) 1..9 else 1..maxG.coerceAtMost(9)))for(x in ds)all.addAll(bank(g,s,x,poolSize,kotlin.math.abs(seed*97+x.hashCode())%2000))
  }
  return all.shuffled(kotlin.random.Random(seed*7919+s.hashCode())).take(size).mapIndexed{index,q->shuffleOptions(q,seed*31+index+s.hashCode())}
 }
-private fun bank(g:Int,s:String,d:String,n:Int):List<M> = List(n){i->make(g,s,d,i)}
+private fun bank(g:Int,s:String,d:String,n:Int,variantSeed:Int=0):List<M> = List(n){i->make(g,s,d,i+variantSeed)}
 private data class Fact(val term:String,val meaning:String)
 private fun facts(s:String):List<Fact> = when(s){
  "Science"->listOf(Fact("evaporation","a liquid changes into gas"),Fact("photosynthesis","plants use light to make food"),Fact("gravity","an attraction between objects with mass"),Fact("condensation","gas changes into liquid"),Fact("friction","a force that resists sliding motion"),Fact("ecosystem","living things interact with each other and their surroundings"),Fact("reflection","light bounces from a surface"),Fact("magnetism","a force associated with magnets and magnetic fields"),Fact("habitat","the natural place where an organism lives"),Fact("insulator","a material that slows heat or electric flow"),Fact("producer","an organism that makes its own food"),Fact("renewable resource","a resource replenished naturally over time"))
