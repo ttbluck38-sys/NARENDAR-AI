@@ -69,7 +69,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   Spacer(Modifier.height(12.dp));Text("Subject",fontWeight=FontWeight.Black)
   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){subs.forEach{(n,_)->FilterChip(sub==n,{sub=n},label={Text(n)})}}
   Spacer(Modifier.height(10.dp));Row{listOf("Mixed","Easy","Medium","Hard").forEach{FilterChip(diff==it,{diff=it},label={Text(it)},modifier=Modifier.padding(end=4.dp))}}
-  Spacer(Modifier.height(10.dp));Row{listOf(10,20,50,100,2500).forEach{FilterChip(size==it,{size=it},label={Text(if(it==2500)"2,500 Mega Test" else "$it")},modifier=Modifier.padding(end=4.dp))}}
+  Spacer(Modifier.height(10.dp));Row(Modifier.horizontalScroll(rememberScrollState())){listOf(10,20,50,100,2500).forEach{FilterChip(size==it,{size=it},label={Text(if(it==2500)"2,500 Mega Test" else "$it")},modifier=Modifier.padding(end=4.dp))}}
   Spacer(Modifier.height(16.dp));BigCard(palette[0],"🎮 READY","Practice MCQs • AI explanation • speaker support"){start=true}
  };return}
  if(at>=qs.size){Column(Modifier.fillMaxSize().padding(20.dp),horizontalAlignment=Alignment.CenterHorizontally){
