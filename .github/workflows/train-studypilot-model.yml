@@ -1,0 +1,52 @@
+name: Train StudyPilot Tiny Model
+
+on:
+  workflow_dispatch:
+    inputs:
+      steps:
+        description: "Training steps (small CPU-safe range)"
+        required: true
+        default: "800"
+        type: choice
+        options:
+          - "200"
+          - "400"
+          - "800"
+          - "1200"
+
+permissions:
+  contents: read
+
+jobs:
+  train:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ai
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: ai/requirements.txt
+      - name: Install training dependency
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Train tiny model from scratch
+        run: python train.py --steps "${{ inputs.steps }}"
+      - name: Smoke-test checkpoint
+        run: python evaluate.py
+      - name: Upload model checkpoint
+        uses: actions/upload-artifact@v4
+        with:
+          name: studypilot-tiny-model
+          path: |
+            ai/artifacts/studypilot_tiny.pt
+            ai/artifacts/tokenizer.json
+          if-no-files-found: error
+          retention-days: 30
