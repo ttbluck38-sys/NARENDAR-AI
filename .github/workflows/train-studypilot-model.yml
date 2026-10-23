@@ -1,9 +1,6 @@
 name: Train StudyPilot Tiny Model
 
 on:
-  push:
-    branches: [studypilot-mcq-fix]
-    paths: ['ai/README.md']
   workflow_dispatch:
     inputs:
       steps:
