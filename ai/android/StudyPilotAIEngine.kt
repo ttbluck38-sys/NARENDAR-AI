@@ -73,12 +73,15 @@ object StudyPilotAIEngine {
     )
 
     private fun localizedAnswer(message: String, classLevel: Int?): Answer? {
-        val raw = message.lowercase().replace('ي', 'ی').replace('ڪ', 'ک')
-        val hasArabic = raw.any { it in '\u0600'..'\u06FF' }
-        if (!hasArabic) return null
+        val original = message.lowercase()
+        val raw = original.replace('ي', 'ی').replace('ڪ', 'ک')
+        val hasArabic = original.any { it in '\u0600'..'\u06FF' }
+        val asksSindhi = original.contains("sindhi") || original.contains("سنڌي") || original.contains("سنڌ")
+        val asksUrdu = original.contains("urdu") || original.contains("اردو")
         val sindhiMarkers = listOf('ٻ','ڄ','ڙ','ڏ','ڳ','ڱ','ڻ','ٽ','ٿ','ڀ','ڦ','ڪ','گ')
-        val sindhi = raw.any { it in sindhiMarkers } || raw.contains("سنڌي") || raw.contains("سنڌ")
-        val match = localized.firstOrNull { concept -> concept.keys.any { key -> raw.contains(key.lowercase()) } }
+        val sindhi = asksSindhi || (!asksUrdu && original.any { it in sindhiMarkers })
+        if (!hasArabic && !asksSindhi && !asksUrdu) return null
+        val match = localized.firstOrNull { concept -> concept.keys.any { key -> raw.contains(key.lowercase()) || original.contains(key.lowercase()) } }
         if (match == null) return Answer("مزید معلومات درکار / وڌيڪ ڄاڻ گهربل",
             if (sindhi) "هن وقت مون کي هن سوال لاءِ پڪ وارو سنڌي جواب موجود ناهي. مهرباني ڪري موضوع جو نالو انگريزي يا سنڌي ۾ وڌيڪ واضح لکو." else "اس سوال کے لیے میرے موجودہ آف لائن ذخیرے میں قابلِ اعتماد اردو جواب نہیں ملا۔ براہِ کرم موضوع کا نام واضح لکھیں۔",
             0.2, true)
