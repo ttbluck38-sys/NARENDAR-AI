@@ -1,8 +1,9 @@
-import argparse, json
+import argparse, json, sys
 from pathlib import Path
 import torch
-from studypilot_ai.model import TinyLanguageModel
 ROOT=Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT / "src"))
+from studypilot_ai.model import TinyLanguageModel
 
 def main():
     p=argparse.ArgumentParser(); p.add_argument("--checkpoint",default=str(ROOT/"artifacts/studypilot_tiny.pt")); p.add_argument("--dataset",default=str(ROOT/"dataset/seed.jsonl")); a=p.parse_args()
