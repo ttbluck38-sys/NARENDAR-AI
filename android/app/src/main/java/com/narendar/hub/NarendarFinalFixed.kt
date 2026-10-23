@@ -65,11 +65,11 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  val qs=remember(sub,diff,size,seed,g){test(maxG,sub,diff,size,seed)}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
   Text("Quiz Arena",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
-  Text("Practice questions with explanations and read-aloud support.",color=MaterialTheme.colorScheme.onSurfaceVariant)
+  Text("Practice questions with explanations and read-aloud support. Choose 2,500 for a long mega test.",color=MaterialTheme.colorScheme.onSurfaceVariant)
   Spacer(Modifier.height(12.dp));Text("Subject",fontWeight=FontWeight.Black)
   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){subs.forEach{(n,_)->FilterChip(sub==n,{sub=n},label={Text(n)})}}
   Spacer(Modifier.height(10.dp));Row{listOf("Mixed","Easy","Medium","Hard").forEach{FilterChip(diff==it,{diff=it},label={Text(it)},modifier=Modifier.padding(end=4.dp))}}
-  Spacer(Modifier.height(10.dp));Row{listOf(10,20,50,100).forEach{FilterChip(size==it,{size=it},label={Text("$it")},modifier=Modifier.padding(end=4.dp))}}
+  Spacer(Modifier.height(10.dp));Row{listOf(10,20,50,100,2500).forEach{FilterChip(size==it,{size=it},label={Text(if(it==2500)"2,500 Mega Test" else "$it")},modifier=Modifier.padding(end=4.dp))}}
   Spacer(Modifier.height(16.dp));BigCard(palette[0],"🎮 READY","Practice MCQs • AI explanation • speaker support"){start=true}
  };return}
  if(at>=qs.size){Column(Modifier.fillMaxSize().padding(20.dp),horizontalAlignment=Alignment.CenterHorizontally){
