@@ -1,10 +1,10 @@
-import argparse, json, random
+import argparse, json, random, sys
 from pathlib import Path
 import torch
 import torch.nn.functional as F
-from studypilot_ai.model import TinyLanguageModel
-
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT / "src"))
+from studypilot_ai.model import TinyLanguageModel
 
 def load_corpus(path):
     texts = []
