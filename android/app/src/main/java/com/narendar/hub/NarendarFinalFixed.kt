@@ -168,7 +168,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
     Spacer(Modifier.height(5.dp));Text(q.q,fontWeight=FontWeight.Bold)
     q.opts.forEachIndexed{ix,opt->Text("${'A'+ix}. $opt",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurface,modifier=Modifier.padding(top=3.dp))}
     Spacer(Modifier.height(5.dp));OutlinedButton(onClick={revealBankAnswer=!revealBankAnswer}){Text(if(revealBankAnswer)"Hide Correct Answer" else "Show Correct Answer")};if(revealBankAnswer)Text("Correct answer: ${q.opts[q.ans]}",fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary,fontSize=13.sp)
-    Text(q.exp,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=3.dp))
+    if(revealBankAnswer)Text(q.exp,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=3.dp))
    }}}
   }
   Row(verticalAlignment=Alignment.CenterVertically,modifier=Modifier.padding(top=5.dp)){
@@ -204,7 +204,15 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  val table=tableNumber.toIntOrNull()
  val result=remember(left,right,operation){val a=left.toDoubleOrNull();val b=right.toDoubleOrNull();if(a==null||b==null)"Enter valid numbers" else when(operation){"+"->(a+b).toString();"-"->(a-b).toString();"×"->(a*b).toString();else->if(b==0.0)"Cannot divide by zero" else (a/b).toString()}}
  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())){
-  Text("Quick Study Tools",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+  var numberForMath by remember{mutableStateOf("12")}
+   val mathN=numberForMath.toLongOrNull()
+   Text("Quick Study Tools",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+   Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
+    Text("Number Explorer",fontWeight=FontWeight.Black)
+    OutlinedTextField(numberForMath,{numberForMath=it.filter{ch->ch.isDigit()||ch==45.toChar()}.take(12)},label={Text("Enter an integer")},singleLine=true,modifier=Modifier.fillMaxWidth())
+    if(mathN!=null && mathN!=0L && kotlin.math.abs(mathN)<=1000000000L){Text("Square: "+(mathN*mathN),fontWeight=FontWeight.SemiBold);Text("Cube: "+(mathN*mathN*mathN),fontWeight=FontWeight.SemiBold);val factors=(1L..kotlin.math.abs(mathN).coerceAtMost(100000L)).filter{mathN%it==0L};Text("Positive factors: "+factors.joinToString(", "),fontSize=12.sp);Text("Prime: "+(kotlin.math.abs(mathN)>1 && (2L..kotlin.math.sqrt(kotlin.math.abs(mathN).toDouble()).toLong()).none{mathN%it==0L}),fontSize=12.sp)} else if(mathN==0L) Text("Zero has no finite factor list.",fontSize=12.sp)
+   }}
+   Spacer(Modifier.height(10.dp))
   Text("Offline calculator, multiplication tables and formula cards.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
   Spacer(Modifier.height(10.dp))
   Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
