@@ -1,6 +1,8 @@
 package com.narendar.hub
 
 import android.speech.tts.TextToSpeech
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,13 +43,16 @@ internal fun AiQuestionTools(
     options: List<String>,
     correctAnswer: String,
     selectedAnswer: String?,
+    appLanguage: String = "English",
     megaTest: Boolean = false,
     revealUses: Int = 0,
     onReveal: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var language by remember { mutableStateOf("English") }
+    var language by remember(appLanguage) { mutableStateOf(appLanguage) }
+    var googleQuery by remember { mutableStateOf("") }
+    var sourceUrl by remember { mutableStateOf("") }
     var explanation by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
@@ -68,16 +73,7 @@ internal fun AiQuestionTools(
 
     Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
         Column(Modifier.padding(14.dp)) {
-            Text("Question language", style = MaterialTheme.typography.titleSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                listOf("English", "Urdu", "Sindhi").forEach { lang ->
-                    FilterChip(
-                        selected = language == lang,
-                        onClick = { language = lang; explanation = ""; error = "" },
-                        label = { Text(lang) }
-                    )
-                }
-            }
+            AppText("App language: $language", style = MaterialTheme.typography.titleSmall)
             OutlinedButton(
                 onClick = {
                     val locale = when (language) {
@@ -86,31 +82,37 @@ internal fun AiQuestionTools(
                         else -> Locale.US
                     }
                     val engine = tts
-                    if (engine != null && ttsReady) {
-                        val result = engine.setLanguage(locale)
-                        if (result == TextToSpeech.LANG_MISSING_DATA ||
-                            result == TextToSpeech.LANG_NOT_SUPPORTED
-                        ) {
-                            error = "This phone's speech engine may not support $language. Install/update speech data in Android Text-to-Speech settings."
-                        } else {
-                            val spoken = buildString {
-                                append(question)
-                                options.forEachIndexed { index, option ->
-                                    append(". Option ${'A' + index}. ")
-                                    append(option)
-                                }
-                            }
-                            engine.speak(spoken, TextToSpeech.QUEUE_FLUSH, null, "studypilot-question")
-                            error = ""
-                        }
-                    } else {
+                    if (engine == null || !ttsReady) {
                         error = "Speech engine is still starting. Try again in a moment."
+                    } else {
+                        val result = engine.setLanguage(locale)
+                        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                            error = "This phone's speech engine does not support $language. Install compatible speech data."
+                        } else {
+                            loading = true
+                            scope.launch {
+                                val original = buildString {
+                                    append(question)
+                                    options.forEachIndexed { index, option ->
+                                        append(". Option ${'A' + index}. ")
+                                        append(option)
+                                    }
+                                }
+                                val spoken = if (language == "English") original else StudyPilotWebSearch.translateForLanguage(original, language)
+                                if (spoken.isNullOrBlank()) {
+                                    error = "Translation to $language was unavailable; nothing was read aloud."
+                                } else {
+                                    engine.speak(spoken, TextToSpeech.QUEUE_FLUSH, null, "studypilot-question")
+                                }
+                                loading = false
+                            }
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("🔊 Read question + all options") }
+            ) { AppText("🔊 Read question + all options") }
 
-            OutlinedButton(onClick = { if (!megaTest || revealUses < 10) { onReveal(); explanation = "Correct answer: $correctAnswer"; error = "" } else error = "All 10 answer reveals have been used for this mega test." }, enabled = !megaTest || revealUses < 10, modifier = Modifier.fillMaxWidth()) { Text(if (megaTest) "Show Correct Answer (${10 - revealUses} left)" else "Show Correct Answer") }
+            OutlinedButton(onClick = { if (!megaTest || revealUses < 10) { onReveal(); explanation = "Correct answer: $correctAnswer"; error = "" } else error = "All 10 answer reveals have been used for this mega test." }, enabled = !megaTest || revealUses < 10, modifier = Modifier.fillMaxWidth()) { AppText(if (megaTest) "Show Correct Answer (${10 - revealUses} left)" else "Show Correct Answer") }
 
             Button(
                 onClick = {
@@ -121,7 +123,7 @@ internal fun AiQuestionTools(
                         try {
                             explanation = withContext(Dispatchers.Default) {
                                 val prompt = when (language) { "Urdu" -> "اردو میں سمجھائیں: $question"; "Sindhi" -> "سنڌي ۾ وضاحت ڪريو: $question"; else -> question }
-                                val offline = StudyPilotAIEngine.ask(prompt, subject = "MCQ explanation")
+                                val offline = StudyPilotAIEngine.ask(prompt, subject = "MCQ explanation", preferredLanguage = language)
                                 if (offline.confidence >= 0.40 && !offline.needsClarification) {
                                     val verdict = when { selectedAnswer == null -> "Correct answer: $correctAnswer. "; selectedAnswer == correctAnswer -> "Your answer is correct. "; else -> "Your answer was $selectedAnswer. The correct answer is $correctAnswer. " }
                                     verdict + offline.text
@@ -140,13 +142,13 @@ internal fun AiQuestionTools(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (loading) CircularProgressIndicator()
-                else Text(if (selectedAnswer == null) "✨ Explain this question with AI" else "✨ Why is my answer right or wrong?")
+                else AppText(if (selectedAnswer == null) "✨ Explain this question with AI" else "✨ Why is my answer right or wrong?")
             }
 
             if (explanation.isNotBlank()) {
                 Spacer(Modifier.height(8.dp))
-                Text(if (explanation.startsWith("Correct answer:")) "Answer reveal" else "StudyPilot AI • $language", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-                Text(explanation)
+                AppText(if (explanation.startsWith("Correct answer:")) "Answer reveal" else "StudyPilot AI • $language", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                AppText(explanation)
                 if (!explanation.startsWith("Correct answer:")) OutlinedButton(
                     onClick = {
                         val engine = tts
@@ -161,11 +163,11 @@ internal fun AiQuestionTools(
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("🔊 Read AI explanation") }
+                ) { AppText("🔊 Read AI explanation") }
             }
             if (error.isNotBlank()) {
                 Spacer(Modifier.height(6.dp))
-                Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                AppText(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         }
     }
