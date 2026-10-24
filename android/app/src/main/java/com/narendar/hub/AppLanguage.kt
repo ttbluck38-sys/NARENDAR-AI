@@ -42,7 +42,16 @@ private val ur = mapOf(
  "Formula Cards" to "فارمولوں کے کارڈ","Rectangle area" to "مستطیل کا رقبہ","Rectangle perimeter" to "مستطیل کا محیط",
  "Speed" to "رفتار","Density" to "کثافت","Ohm’s law" to "اوہم کا قانون","Circle circumference" to "دائرے کا محیط","Average" to "اوسط",
  "Search the web" to "ویب پر تلاش کریں","Searching trusted sources…" to "معتبر ذرائع میں تلاش جاری ہے…",
- "No trusted summary found. Open Google results to check the question." to "معتبر خلاصہ نہیں ملا۔ سوال دیکھنے کے لیے گوگل نتائج کھولیں۔"
+ "No trusted summary found. Open Google results to check the question." to "معتبر خلاصہ نہیں ملا۔ سوال دیکھنے کے لیے گوگل نتائج کھولیں۔",
+ "Subject" to "مضمون","Test Complete" to "ٹیسٹ مکمل","NEW UNIQUE TEST" to "نیا منفرد ٹیسٹ",
+ "ENTER ARENA" to "مشق گاہ میں داخل ہوں","Note title" to "نوٹ کا عنوان","Study note / answer" to "مطالعے کا نوٹ / جواب",
+ "SAVE NOTE" to "نوٹ محفوظ کریں","DELETE" to "حذف کریں","New study task" to "نیا تعلیمی کام","ADD TASK" to "کام شامل کریں",
+ "Tap to reveal answer" to "جواب دیکھنے کے لیے دبائیں","MCQ Question Bank" to "MCQ سوالات کا بینک",
+ "★ Bookmarks" to "★ محفوظ سوالات","Search questions, options or explanations" to "سوال، اختیارات یا وضاحت تلاش کریں",
+ "← Previous" to "← پچھلا","Next →" to "اگلا →","Focus Studio" to "فوکس اسٹوڈیو","FOCUS TIME" to "فوکس کا وقت",
+ "Reset" to "دوبارہ شروع","Quick Study Tools" to "فوری تعلیمی ٹولز","Number Explorer" to "اعداد کا جائزہ",
+ "Enter an integer" to "صحیح عدد درج کریں","Multiplication Table" to "پہاڑا","Enter any whole number" to "کوئی بھی مکمل عدد درج کریں",
+ "Basic Calculator" to "بنیادی کیلکولیٹر","Number A" to "عدد A","Number B" to "عدد B","Open source" to "ماخذ کھولیں","Search Google" to "گوگل پر تلاش کریں"
 )
 private val sd = mapOf(
  "Choose class" to "پنهنجو ڪلاس چونڊيو","Class 8 includes Class 1–8 learning." to "ڪلاس 8 ۾ ڪلاس 1 کان 8 تائين پڙهائي شامل آهي.",
@@ -62,7 +71,16 @@ private val sd = mapOf(
  "Ask a study question" to "پڙهائيءَ جو سوال پڇو","ASK STUDYPILOT" to "اسٽڊي پائلٽ کان پڇو",
  "Offline preview • typo-tolerant • no API key" to "آف لائن ڏيک • املا جون غلطيون سمجهي ٿو • API key ناهي",
  "Search the web" to "ويب تي ڳوليو","Searching trusted sources…" to "معتبر ذريعن ۾ ڳولا جاري آهي…",
- "No trusted summary found. Open Google results to check the question." to "معتبر خلاصو نه مليو. سوال ڏسڻ لاءِ گوگل نتيجا کوليو."
+ "No trusted summary found. Open Google results to check the question." to "معتبر خلاصو نه مليو. سوال ڏسڻ لاءِ گوگل نتيجا کوليو.",
+ "Subject" to "مضمون","Test Complete" to "ٽيسٽ مڪمل","NEW UNIQUE TEST" to "نئون منفرد ٽيسٽ",
+ "ENTER ARENA" to "مشق شروع ڪريو","Note title" to "نوٽ جو عنوان","Study note / answer" to "پڙهائي نوٽ / جواب",
+ "SAVE NOTE" to "نوٽ محفوظ ڪريو","DELETE" to "ختم ڪريو","New study task" to "نئون پڙهائي ڪم","ADD TASK" to "ڪم شامل ڪريو",
+ "Tap to reveal answer" to "جواب ڏسڻ لاءِ ٽيپ ڪريو","MCQ Question Bank" to "MCQ سوالن جو بينڪ",
+ "★ Bookmarks" to "★ محفوظ سوال","Search questions, options or explanations" to "سوال، اختيار يا وضاحت ڳوليو",
+ "← Previous" to "← اڳيون","Next →" to "اڳيون →","Focus Studio" to "فوڪس اسٽوڊيو","FOCUS TIME" to "فوڪس وقت",
+ "Reset" to "ٻيهر شروع","Quick Study Tools" to "جلدي پڙهائي جا اوزار","Number Explorer" to "انگن جو جائزو",
+ "Enter an integer" to "صحيح عدد داخل ڪريو","Multiplication Table" to "ضرب جي ٽيبل","Enter any whole number" to "ڪو به پورو عدد داخل ڪريو",
+ "Basic Calculator" to "بنيادي ڪيلڪيوليٽر","Number A" to "عدد A","Number B" to "عدد B","Open source" to "ذريعو کوليو","Search Google" to "گوگل تي ڳوليو"
 )
 
 fun translateAppText(text: String, language: String): String {
@@ -74,6 +92,11 @@ fun translateAppText(text: String, language: String): String {
     }
     Regex("^Class (\\d+)$").find(text)?.let { m ->
         return if (language == "Urdu") "جماعت ${m.groupValues[1]}" else "ڪلاس ${m.groupValues[1]}"
+    }
+    if (text.startsWith("App language:")) {
+        val value = text.substringAfter(":").trim()
+        val label = when (value) { "English" -> if (language == "Urdu") "انگریزی" else "انگريزي"; "Urdu" -> "اردو"; else -> "سنڌي" }
+        return if (language == "Urdu") "ایپ کی زبان: $label" else "ايپ جي ٻولي: $label"
     }
     if (text.startsWith("Class ")) return if (language == "Urdu") text.replace("Class ", "جماعت ") else text.replace("Class ", "ڪلاس ")
     if (text.startsWith("LEVEL ")) return text
@@ -101,7 +124,6 @@ fun AppText(
     onTextLayout: (TextLayoutResult) -> Unit = {},
     style: TextStyle = MaterialTheme.typography.bodyLarge
 ) {
-    val language = androidx.compose.runtime.staticCompositionLocalOf { "English" }
     MaterialText(
         text = translateAppText(text, LocalAppLanguage.current),
         modifier = modifier, color = color, fontSize = fontSize, fontStyle = fontStyle,
