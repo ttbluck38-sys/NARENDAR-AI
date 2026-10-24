@@ -130,12 +130,12 @@ object StudyPilotAIEngine {
             "Example: learning to test evidence improves critical thinking.")
     )
 
-    fun ask(message: String, subject: String? = null, classLevel: Int? = null): Answer {
+    fun ask(message: String, subject: String? = null, classLevel: Int? = null, preferredLanguage: String? = null): Answer {
         val raw = message.trim()
         if (raw.isBlank()) {
             return Answer("Clarification", "Type a study question or topic and I will help you work through it.", 1.0, true)
         }
-        val lang = language(raw)
+        val lang = if (!preferredLanguage.isNullOrBlank()) language(preferredLanguage) else language(raw)
         solveMath(raw, lang)?.let { return it }
         val normalized = normalize(raw)
         val best = concepts.map { c -> c to c.aliases.maxOf { alias -> similarity(normalized, normalize(alias)) } }
