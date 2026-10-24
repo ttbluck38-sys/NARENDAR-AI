@@ -171,14 +171,18 @@ internal fun AiQuestionTools(
                 if (!explanation.startsWith("Correct answer:")) OutlinedButton(
                     onClick = {
                         val engine = tts
-                        if (engine != null && ttsReady) {
-                            val locale = when (language) {
-                                "Urdu" -> Locale("ur", "PK")
-                                "Sindhi" -> Locale("sd", "PK")
-                                else -> Locale.US
+                        if (engine == null || !ttsReady) {
+                            error = "Speech engine is still starting. Try again."
+                        } else {
+                            val locale = when (language) { "Urdu" -> Locale("ur", "PK"); "Sindhi" -> Locale("sd", "PK"); else -> Locale.US }
+                            val result = engine.setLanguage(locale)
+                            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                                error = "This phone speech engine does not support $language."
+                            } else scope.launch {
+                                val spoken = if (language == "English") explanation else StudyPilotWebSearch.translateForLanguage(explanation, language)
+                                if (spoken.isNullOrBlank()) error = "Could not translate explanation to $language; nothing was spoken."
+                                else engine.speak(spoken, TextToSpeech.QUEUE_FLUSH, null, "studypilot-explanation")
                             }
-                            engine.setLanguage(locale)
-                            engine.speak(explanation, TextToSpeech.QUEUE_FLUSH, null, "studypilot-explanation")
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
