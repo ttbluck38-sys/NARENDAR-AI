@@ -19,6 +19,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.abs
@@ -306,6 +309,10 @@ private data class TutorMessage(val id: Long, val fromUser: Boolean, val text: S
 
 @Composable
 private fun Tutor(grade: Int, appLanguage: String) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var searching by remember { mutableStateOf(false) }
+    var googleQuery by remember { mutableStateOf("") }
     var input by remember { mutableStateOf("") }
     var history by remember {
         mutableStateOf(listOf(TutorMessage(1L, false,
@@ -341,12 +348,46 @@ private fun Tutor(grade: Int, appLanguage: String) {
         Spacer(Modifier.height(6.dp))
         Button(onClick = {
             val question = input.trim()
-            if (question.isNotEmpty()) {
-                val answer = StudyPilotAIEngine.ask(question, classLevel = if (grade in 1..12) grade else null, preferredLanguage = appLanguage)
-                history = history + TutorMessage(System.currentTimeMillis(), true, question) +
-                    TutorMessage(System.currentTimeMillis() + 1, false, answer.text, answer.topic)
+            if (question.isNotEmpty() && !searching) {
                 input = ""
+                googleQuery = ""
+                searching = true
+                val pendingId = System.currentTimeMillis() + 1
+                history = history + TutorMessage(System.currentTimeMillis(), true, question) +
+                    TutorMessage(pendingId, false, translateAppText("Searching the web…", appLanguage), "StudyPilot")
+                scope.launch {
+                    try {
+                        val answer = withContext(Dispatchers.Default) {
+                            StudyPilotAIEngine.ask(question, classLevel = if (grade in 1..12) grade else null, preferredLanguage = appLanguage)
+                        }
+                        var answerText = answer.text
+                        var answerTopic = answer.topic
+                        if (answer.confidence < 0.43 || answer.needsClarification) {
+                            val web = StudyPilotWebSearch.search(question, appLanguage)
+                            if (web != null) {
+                                val translated = if (appLanguage == "English") web.extract else StudyPilotWebSearch.translateForLanguage(web.extract, appLanguage)
+                                if (!translated.isNullOrBlank()) {
+                                    answerText = translated
+                                    answerTopic = web.title + " • Wikipedia"
+                                } else {
+                                    googleQuery = question
+                                    answerText = translateAppText("I found a source, but could not translate it reliably. Open Google results below.", appLanguage)
+                                }
+                            } else {
+                                googleQuery = question
+                                answerText = translateAppText("I don't know this yet from my offline knowledge. Open Google results below for current information.", appLanguage)
+                            }
+                        }
+                        history = history.dropLast(1) + TutorMessage(System.currentTimeMillis() + 2, false, answerText, answerTopic)
+                    } catch (e: Exception) {
+                        googleQuery = question
+                        history = history.dropLast(1) + TutorMessage(System.currentTimeMillis() + 2, false, translateAppText("Search failed. Check your internet and use Google results below.", appLanguage))
+                    } finally { searching = false }
+                }
             }
-        }, modifier = Modifier.fillMaxWidth()) { AppText("ASK STUDYPILOT") }
+        }, enabled = !searching, modifier = Modifier.fillMaxWidth()) {
+            AppText(if (searching) "Searching trusted sources…" else "ASK STUDYPILOT")
+        }
+        if (googleQuery.isNotBlank()) OutlinedButton(onClick = { StudyPilotWebSearch.openGoogle(context, googleQuery) }, modifier = Modifier.fillMaxWidth()) { AppText("Search Google") }
     }
 }
