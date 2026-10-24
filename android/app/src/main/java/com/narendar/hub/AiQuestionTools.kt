@@ -33,6 +33,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
+import com.narendar.hub.ai.StudyPilotAIEngine
 
 @Composable
 internal fun AiQuestionTools(
@@ -40,6 +41,9 @@ internal fun AiQuestionTools(
     options: List<String>,
     correctAnswer: String,
     selectedAnswer: String?,
+    megaTest: Boolean = false,
+    revealUses: Int = 0,
+    onReveal: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -95,8 +99,6 @@ internal fun AiQuestionTools(
                                     append(". Option ${'A' + index}. ")
                                     append(option)
                                 }
-                                append(". Correct answer: ")
-                                append(correctAnswer)
                             }
                             engine.speak(spoken, TextToSpeech.QUEUE_FLUSH, null, "studypilot-question")
                             error = ""
@@ -107,6 +109,8 @@ internal fun AiQuestionTools(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("🔊 Read question + all options") }
+
+            OutlinedButton(onClick = { if (!megaTest || revealUses < 10) { onReveal(); explanation = "Correct answer: $correctAnswer"; error = "" } else error = "All 10 answer reveals have been used for this mega test." }, enabled = !megaTest || revealUses < 10, modifier = Modifier.fillMaxWidth()) { Text(if (megaTest) "Show Correct Answer (${10 - revealUses} left)" else "Show Correct Answer") }
 
             Button(
                 onClick = {
@@ -144,9 +148,9 @@ internal fun AiQuestionTools(
 
             if (explanation.isNotBlank()) {
                 Spacer(Modifier.height(8.dp))
-                Text("AI tutor • $language", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Text(if (explanation.startsWith("Correct answer:")) "Answer reveal" else "StudyPilot AI • $language", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                 Text(explanation)
-                OutlinedButton(
+                if (!explanation.startsWith("Correct answer:")) OutlinedButton(
                     onClick = {
                         val engine = tts
                         if (engine != null && ttsReady) {
