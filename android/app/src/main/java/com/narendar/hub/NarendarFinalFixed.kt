@@ -61,6 +61,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var pick by remember{mutableIntStateOf(-1)}
  var score by remember{mutableIntStateOf(0)}
  var seed by remember{mutableIntStateOf(0)}
+  var revealUses by remember{mutableIntStateOf(0)}
  val maxG=if(g<0)9 else g
  val qs=remember(sub,diff,size,seed,g){test(g,sub,diff,size,seed)}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
@@ -76,7 +77,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   Spacer(Modifier.height(40.dp));Text("🏆",fontSize=70.sp);Text("Test Complete",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
   Text("$score / $size",fontSize=34.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
   Text("Accuracy ${score*100/size}%",color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(18.dp))
-  Button({seed++;at=0;pick=-1;score=0}){Text("NEW UNIQUE TEST")}
+  Button({seed++;at=0;pick=-1;score=0;revealUses=0}){Text("NEW UNIQUE TEST")}
  };return}
  val q=qs[at]
  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
@@ -85,9 +86,9 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   Text("Class ${q.grade} • ${q.subject} • ${q.diff} • ${q.topic}",color=MaterialTheme.colorScheme.primary,fontSize=12.sp,fontWeight=FontWeight.Bold)
   Card(Modifier.fillMaxWidth().padding(vertical=10.dp),shape=RoundedCornerShape(25.dp)){Text(q.q,Modifier.padding(21.dp),fontSize=19.sp,fontWeight=FontWeight.Black)}
   q.opts.forEachIndexed{i,o->
-   val good=pick>=0&&i==q.ans;val bad=pick==i&&i!=q.ans
-   Card(onClick={if(pick<0){pick=i;record(i==q.ans);if(i==q.ans)score++;toast(if(i==q.ans)"Correct! 🎉" else "Review explanation 📘")}},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=if(good)Color(0xFF00A884).copy(.16f)else if(bad)Color(0xFFE83E8C).copy(.16f)else MaterialTheme.colorScheme.surfaceVariant)){
-    Row(Modifier.padding(15.dp)){Text("${'A'+i}",fontWeight=FontWeight.Black,color=if(good)Color(0xFF00A884)else MaterialTheme.colorScheme.primary);Spacer(Modifier.width(12.dp));Text(o,fontWeight=FontWeight.SemiBold)}
+   val bad=pick==i&&i!=q.ans
+   Card(onClick={if(pick<0){pick=i;record(i==q.ans);if(i==q.ans)score++;toast(if(i==q.ans)"Correct! 🎉" else "Review explanation 📘")}},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=if(bad)Color(0xFFE83E8C).copy(.16f)else MaterialTheme.colorScheme.surfaceVariant)){
+    Row(Modifier.padding(15.dp)){Text("${'A'+i}",fontWeight=FontWeight.Black,color=if(bad)Color(0xFFE83E8C)else MaterialTheme.colorScheme.primary);Spacer(Modifier.width(12.dp));Text(o,fontWeight=FontWeight.SemiBold)}
    }
   }
   if(pick>=0){
@@ -162,11 +163,11 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   OutlinedTextField(query,{query=it;page=0},label={Text("Search questions, options or explanations")},singleLine=true,modifier=Modifier.fillMaxWidth())
   Text("Showing ${if(filtered.isEmpty())0 else page*25+1}–${minOf((page+1)*25,filtered.size)} of ${filtered.size} matches • Page ${page+1}/$pageCount",fontSize=11.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(vertical=5.dp))
   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){
-   items(questions,key={it.id}){q->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(13.dp)){
+   items(questions,key={it.id}){q->var revealBankAnswer by remember(q.id){mutableStateOf(false)};Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(13.dp)){
     Row(verticalAlignment=Alignment.CenterVertically){Text("Class ${q.grade} • ${q.subject} • ${q.diff} • ${q.topic}",fontSize=10.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,modifier=Modifier.weight(1f));Text(if(q.id.toString() in bookmarks)"★ Saved" else "☆ Save",Modifier.clickable{val next=bookmarks.toMutableSet();if(q.id.toString() in next)next.remove(q.id.toString())else next.add(q.id.toString());bookmarks=next;prefs.edit().putStringSet("bookmarks",next).apply()}.padding(4.dp),fontSize=12.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)}
     Spacer(Modifier.height(5.dp));Text(q.q,fontWeight=FontWeight.Bold)
-    q.opts.forEachIndexed{ix,opt->Text("${'A'+ix}. $opt",fontSize=13.sp,color=if(ix==q.ans)Color(0xFF008A68)else MaterialTheme.colorScheme.onSurface,modifier=Modifier.padding(top=3.dp))}
-    Spacer(Modifier.height(5.dp));Text("Answer: ${q.opts[q.ans]}",fontWeight=FontWeight.Black,color=Color(0xFF008A68),fontSize=13.sp)
+    q.opts.forEachIndexed{ix,opt->Text("${'A'+ix}. $opt",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurface,modifier=Modifier.padding(top=3.dp))}
+    Spacer(Modifier.height(5.dp));OutlinedButton(onClick={revealBankAnswer=!revealBankAnswer}){Text(if(revealBankAnswer)"Hide Correct Answer" else "Show Correct Answer")};if(revealBankAnswer)Text("Correct answer: ${q.opts[q.ans]}",fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary,fontSize=13.sp)
     Text(q.exp,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=3.dp))
    }}}
   }
