@@ -122,15 +122,32 @@ internal fun AiQuestionTools(
                     scope.launch {
                         try {
                             explanation = withContext(Dispatchers.Default) {
-                                val prompt = when (language) { "Urdu" -> "اردو میں سمجھائیں: $question"; "Sindhi" -> "سنڌي ۾ وضاحت ڪريو: $question"; else -> question }
+                                val prompt = question + ". Options: " + options.joinToString("; ")
                                 val offline = StudyPilotAIEngine.ask(prompt, subject = "MCQ explanation", preferredLanguage = language)
-                                if (offline.confidence >= 0.40 && !offline.needsClarification) {
-                                    val verdict = when { selectedAnswer == null -> "Correct answer: $correctAnswer. "; selectedAnswer == correctAnswer -> "Your answer is correct. "; else -> "Your answer was $selectedAnswer. The correct answer is $correctAnswer. " }
+                                if (offline.confidence >= 0.43 && !offline.needsClarification) {
+                                    val verdict = when (language) {
+                                        "Urdu" -> if (selectedAnswer == correctAnswer) "آپ کا جواب درست ہے۔ " else "درست جواب: " + correctAnswer + "۔ "
+                                        "Sindhi" -> if (selectedAnswer == correctAnswer) "توهان جو جواب صحيح آهي. " else "صحيح جواب: " + correctAnswer + ". "
+                                        else -> if (selectedAnswer == correctAnswer) "Your answer is correct. " else "Correct answer: " + correctAnswer + ". "
+                                    }
                                     verdict + offline.text
-                                } else if (AiConfig.isConfigured()) {
-                                    withContext(Dispatchers.IO) { requestExplanation(question, options, correctAnswer, selectedAnswer, language) }
                                 } else {
-                                    when (language) { "Urdu" -> "یہ سوال موجودہ آف لائن علم میں شامل نہیں۔ درست جواب: $correctAnswer۔ مزید وضاحت کے لیے آن لائن AI سیٹ اپ درکار ہے۔"; "Sindhi" -> "هي سوال موجوده آف لائن ڄاڻ ۾ شامل ناهي. صحيح جواب: $correctAnswer. وڌيڪ وضاحت لاءِ آن لائين AI سيٽ اپ گهرجي."; else -> "This question is outside the current offline knowledge base. Correct answer: $correctAnswer. Configure the online AI endpoint for a deeper explanation." }
+                                    val web = StudyPilotWebSearch.search(question, language)
+                                    if (web != null) {
+                                        sourceUrl = web.sourceUrl
+                                        val webText = if (language == "English") web.extract else StudyPilotWebSearch.translateForLanguage(web.extract, language)
+                                        if (webText != null) "Web reference: " + web.title + "\n" + webText
+                                        else { googleQuery = question; "A source was found but could not be translated. Open Google results below." }
+                                    } else if (AiConfig.isConfigured()) {
+                                        withContext(Dispatchers.IO) { requestExplanation(question, options, correctAnswer, selectedAnswer, language) }
+                                    } else {
+                                        googleQuery = question
+                                        when (language) {
+                                            "Urdu" -> "آف لائن علم اور ویب خلاصے سے جواب نہیں ملا۔ تازہ نتائج کے لیے نیچے گوگل تلاش کھولیں۔"
+                                            "Sindhi" -> "آف لائن ڄاڻ يا ويب خلاصو جواب نه ڏئي سگهيو. نون نتيجن لاءِ هيٺ گوگل ڳولا کوليو."
+                                            else -> "I could not verify an answer offline. Open Google results below for current information."
+                                        }
+                                    }
                                 }
                             }
                         } catch (e: Exception) {
@@ -149,6 +166,8 @@ internal fun AiQuestionTools(
                 Spacer(Modifier.height(8.dp))
                 AppText(if (explanation.startsWith("Correct answer:")) "Answer reveal" else "StudyPilot AI • $language", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                 AppText(explanation)
+                if (sourceUrl.isNotBlank()) OutlinedButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(sourceUrl)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }, modifier = Modifier.fillMaxWidth()) { AppText("Open source") }
+                if (googleQuery.isNotBlank()) OutlinedButton(onClick = { StudyPilotWebSearch.openGoogle(context, googleQuery) }, modifier = Modifier.fillMaxWidth()) { AppText("Search Google") }
                 if (!explanation.startsWith("Correct answer:")) OutlinedButton(
                     onClick = {
                         val engine = tts
