@@ -63,7 +63,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var seed by remember{mutableIntStateOf(0)}
   var revealUses by remember{mutableIntStateOf(0)}
  val maxG=if(g<0)9 else g
- val qs=remember(sub,diff,size,seed,g){test(g,sub,diff,size,seed)}
+ val qs=remember(sub,diff,size,seed,g,fromGrade){test(g,sub,diff,size,seed,fromGrade)}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
   Text("Quiz Arena",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
   Text("Practice questions with explanations and read-aloud support. Choose 2,500 for a long mega test.",color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -236,7 +236,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 @Composable private fun Profile(g:Int,xp:Int,ok:Int,tried:Int,dark:Boolean,setDark:(Boolean)->Unit,change:()->Unit){val acc=if(tried==0)0 else ok*100/tried;Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){Text("Profile & Stats",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);BigCard(palette[1],"LEVEL ${xp/500+1}","$xp XP • $acc% accuracy",{});Spacer(Modifier.height(10.dp));Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Stat("Attempted",tried.toString(),palette[0],Modifier.weight(1f));Stat("Correct",ok.toString(),palette[2],Modifier.weight(1f))};Spacer(Modifier.height(10.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically){Text("Dark theme",modifier=Modifier.weight(1f),fontWeight=FontWeight.Bold);Switch(dark,setDark)}};Spacer(Modifier.height(8.dp));OutlinedButton(change,modifier=Modifier.fillMaxWidth()){Text("CHANGE CLASS")}}
 }
 
-private fun test(maxG:Int,s:String,d:String,size:Int,seed:Int):List<M>{
+private fun test(maxG:Int,s:String,d:String,size:Int,seed:Int,fromGrade:Int=1):List<M>{
  val ds=if(d=="Mixed")listOf("Easy","Medium","Hard")else listOf(d)
  val all=ArrayList<M>()
  if(size>=2500){
@@ -244,7 +244,7 @@ private fun test(maxG:Int,s:String,d:String,size:Int,seed:Int):List<M>{
   for(x in ds)all.addAll(bank(targetGrade,s,x,2500,kotlin.math.abs(seed*97+x.hashCode())%2000))
  }else{
   val poolSize=minOf(2500,maxOf(40,size*2))
-  for(g in (if(maxG<1) 1..9 else 1..maxG.coerceAtMost(9)))for(x in ds)all.addAll(bank(g,s,x,poolSize,kotlin.math.abs(seed*97+x.hashCode())%2000))
+  for(g in (if(maxG<1) 1..9 else fromGrade.coerceIn(1,maxG)..maxG.coerceAtMost(9)))for(x in ds)all.addAll(bank(g,s,x,poolSize,kotlin.math.abs(seed*97+x.hashCode())%2000))
  }
  return all.shuffled(kotlin.random.Random(seed*7919+s.hashCode())).take(size).mapIndexed{index,q->shuffleOptions(q,seed*31+index+s.hashCode())}
 }
