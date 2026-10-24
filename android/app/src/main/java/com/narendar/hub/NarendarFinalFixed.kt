@@ -94,12 +94,12 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   if(pick>=0){
    Card(Modifier.fillMaxWidth().padding(top=8.dp),shape=RoundedCornerShape(19.dp)){Column(Modifier.padding(15.dp)){
     Text(if(pick==q.ans)"✓ Correct" else "✕ Review",fontWeight=FontWeight.Black)
-    Text(q.exp,fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-    AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=q.opts[pick])
+    Text(if(pick==q.ans) "Correct — use StudyPilot AI to learn why." else "Review with StudyPilot AI to understand the mistake.",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=q.opts[pick],megaTest=size==2500,revealUses=revealUses,onReveal={if(size==2500&&revealUses<10)revealUses++})
     Spacer(Modifier.height(8.dp));Button({at++;pick=-1},modifier=Modifier.fillMaxWidth()){Text(if(at==size-1)"FINISH" else "NEXT QUESTION →")}
    }}
   } else {
-   AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=null)
+   AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=null,megaTest=size==2500,revealUses=revealUses,onReveal={if(size==2500&&revealUses<10)revealUses++})
   }
  }
 }
