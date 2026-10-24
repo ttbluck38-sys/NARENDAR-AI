@@ -7,16 +7,26 @@ plugins {
 android {
     namespace = "com.narendar.hub"
     compileSdk = 35
+
     defaultConfig {
-        applicationId = "com.narendar.hub.v2"
-        minSdk = 23
+        // Separate package name prevents failed upgrades caused by older debug APKs
+        // signed with a different temporary debug keystore.
+        applicationId = "com.narendar.studypilotai"
+        minSdk = 21
         targetSdk = 35
-        versionCode = 2
-        versionName = "2.0.0"
+        versionCode = 3
+        versionName = "2.1.0"
     }
+
     buildFeatures { compose = true }
-    compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
-    kotlinOptions { jvmTarget = "17" }
+
+    // Java 8 bytecode gives the widest practical runtime compatibility while
+    // the build itself still uses the Java 17 toolchain required by modern AGP/Kotlin.
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    kotlinOptions { jvmTarget = "1.8" }
 }
 
 dependencies {
