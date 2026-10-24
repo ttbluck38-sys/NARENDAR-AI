@@ -246,8 +246,16 @@ private fun test(maxG:Int,s:String,d:String,size:Int,seed:Int,fromGrade:Int=1):L
  val ds=if(d=="Mixed")listOf("Easy","Medium","Hard")else listOf(d)
  val all=ArrayList<M>()
  if(size>=2500){
-  val targetGrade=if(maxG in 1..9) maxG else 8
-  for(x in ds)all.addAll(bank(targetGrade,s,x,2500,kotlin.math.abs(seed*97+x.hashCode())%2000))
+  val grades=if(maxG<1) (1..9).toList() else (fromGrade.coerceIn(1,maxG)..maxG.coerceAtMost(9)).toList()
+  val bucketCount=(grades.size*ds.size).coerceAtLeast(1)
+  val baseCount=2500/bucketCount
+  val remainder=2500%bucketCount
+  var bucket=0
+  for(grade in grades)for(x in ds){
+   val count=baseCount+(if(bucket<remainder)1 else 0)
+   all.addAll(bank(grade,s,x,count,kotlin.math.abs(seed*97+x.hashCode())%2000))
+   bucket++
+  }
  }else{
   val poolSize=minOf(2500,maxOf(40,size*2))
   for(g in (if(maxG<1) 1..9 else fromGrade.coerceIn(1,maxG)..maxG.coerceAtMost(9)))for(x in ds)all.addAll(bank(g,s,x,poolSize,kotlin.math.abs(seed*97+x.hashCode())%2000))
