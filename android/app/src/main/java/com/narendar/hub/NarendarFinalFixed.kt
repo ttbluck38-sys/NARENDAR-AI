@@ -67,6 +67,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  val qs=remember(sub,diff,size,seed,g,fromGrade){test(g,sub,diff,size,seed,fromGrade)}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
   Text("Quiz Arena",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
+   if(g>0){Text("Question class range",fontWeight=FontWeight.Black);Row(Modifier.horizontalScroll(rememberScrollState())){(1..g).forEach{from->FilterChip(fromGrade==from,{fromGrade=from},label={Text("Class $from–$g")},modifier=Modifier.padding(end=4.dp))}}}
   Text("Practice questions with explanations and read-aloud support. Choose 2,500 for a long mega test.",color=MaterialTheme.colorScheme.onSurfaceVariant)
   Spacer(Modifier.height(12.dp));Text("Subject",fontWeight=FontWeight.Black)
   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){subs.forEach{(n,_)->FilterChip(sub==n,{sub=n},label={Text(n)})}}
