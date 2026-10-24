@@ -62,7 +62,8 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var score by remember{mutableIntStateOf(0)}
  var seed by remember{mutableIntStateOf(0)}
   var revealUses by remember{mutableIntStateOf(0)}
- val maxG=if(g<0)9 else g
+ var fromGrade by remember(g){mutableIntStateOf(1)}
+  val maxG=if(g<0)9 else g
  val qs=remember(sub,diff,size,seed,g,fromGrade){test(g,sub,diff,size,seed,fromGrade)}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
   Text("Quiz Arena",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
