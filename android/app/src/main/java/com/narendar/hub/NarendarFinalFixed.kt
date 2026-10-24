@@ -32,27 +32,27 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 
 @Composable fun FixedHub(context:Context){
  val p=remember{context.getSharedPreferences("narendar_fixed",Context.MODE_PRIVATE)}
- var grade by remember{mutableIntStateOf(p.getInt("grade",-1))};var page by remember{mutableStateOf(if(grade<0)"pick" else "home")};var dark by remember{mutableStateOf(p.getBoolean("dark",false))}
+ var appLanguage by remember{mutableStateOf(p.getString("app_language","English") ?: "English")};var grade by remember{mutableIntStateOf(p.getInt("grade",-1))};var page by remember{mutableStateOf(if(grade<0)"pick" else "home")};var dark by remember{mutableStateOf(p.getBoolean("dark",false))}
  var xp by remember{mutableIntStateOf(p.getInt("xp",0))};var correct by remember{mutableIntStateOf(p.getInt("correct",0))};var tried by remember{mutableIntStateOf(p.getInt("tried",0))};var notes by remember{mutableStateOf(loadNotes(p))};var tasks by remember{mutableStateOf(loadTasks(p))};var toast by remember{mutableStateOf("")}
  fun record(ok:Boolean){tried++;if(ok)correct++;xp+=if(ok)20 else 5;p.edit().putInt("xp",xp).putInt("correct",correct).putInt("tried",tried).apply()}
  fun saveNotes(v:List<Note>){notes=v;p.edit().putString("notes",notesJson(v)).apply()}
  fun saveTasks(v:List<Task>){tasks=v;p.edit().putString("tasks",tasksJson(v)).apply()}
  LaunchedEffect(toast){if(toast.isNotEmpty()){delay(1500);toast=""}}
- MaterialTheme(colorScheme=if(dark)darkColorScheme(primary=Color(0xFF9AB8FF),secondary=Color(0xFF70E0BE),tertiary=Color(0xFFFF9DC7))else lightColorScheme(primary=palette[0],secondary=palette[2],tertiary=palette[4],surface=Color(0xFFF7F8FC))){
-  if(page=="pick"){Pick(grade){grade=it;p.edit().putInt("grade",it).apply();page="home"};return@MaterialTheme}
-  Scaffold(topBar={CenterAlignedTopAppBar(title={Text("StudyPilot AI",fontWeight=FontWeight.Black)})},bottomBar={NavigationBar{listOf("home" to "⌂","learn" to "▣","quiz" to "✓","tutor" to "✦","library" to "▤","profile" to "●").forEach{(k,ic)->NavigationBarItem(page==k,{page=k},icon={Text(ic)},label={Text(k.replaceFirstChar{it.uppercase()})})}}}){pad->Box(Modifier.fillMaxSize().padding(pad)){AnimatedContent(page,label="page"){s->when(s){"home"->Home(grade,xp,correct,tried,tasks.count{!it.done},notes.size){page=it};"learn"->Learn(grade){page="quiz"};"quiz"->Quiz(grade,::record){toast=it};"library"->Library(grade,notes,tasks,::saveNotes,::saveTasks);"tutor"->Tutor(grade);"profile"->Profile(grade,xp,correct,tried,dark,{dark=it;p.edit().putBoolean("dark",it).apply()}){grade=-1;p.edit().putInt("grade",-1).apply();page="pick"}}};AnimatedVisibility(toast.isNotEmpty(),enter=slideInVertically{it}+fadeIn(),exit=fadeOut(),modifier=Modifier.align(Alignment.BottomCenter).padding(8.dp)){Surface(shape=RoundedCornerShape(18.dp),tonalElevation=8.dp){Text(toast,Modifier.padding(14.dp),fontWeight=FontWeight.Bold)}}}}
+ androidx.compose.runtime.CompositionLocalProvider(LocalAppLanguage provides appLanguage) { MaterialTheme(colorScheme=if(dark)darkColorScheme(primary=Color(0xFF9AB8FF),secondary=Color(0xFF70E0BE),tertiary=Color(0xFFFF9DC7))else lightColorScheme(primary=palette[0],secondary=palette[2],tertiary=palette[4],surface=Color(0xFFF7F8FC))){
+  if(page=="pick"){Pick(grade,appLanguage,{appLanguage=it;p.edit().putString("app_language",it).apply()}){grade=it;p.edit().putInt("grade",it).apply();page="home"};return@MaterialTheme}
+  Scaffold(topBar={CenterAlignedTopAppBar(title={AppText("StudyPilot AI",fontWeight=FontWeight.Black)})},bottomBar={NavigationBar{listOf("home" to "⌂","learn" to "▣","quiz" to "✓","tutor" to "✦","library" to "▤","profile" to "●").forEach{(k,ic)->NavigationBarItem(page==k,{page=k},icon={AppText(ic)},label={AppText(k.replaceFirstChar{it.uppercase()})})}}}){pad->Box(Modifier.fillMaxSize().padding(pad)){AnimatedContent(page,label="page"){s->when(s){"home"->Home(grade,xp,correct,tried,tasks.count{!it.done},notes.size){page=it};"learn"->Learn(grade){page="quiz"};"quiz"->Quiz(grade,appLanguage,::record){toast=it};"library"->Library(grade,notes,tasks,::saveNotes,::saveTasks);"tutor"->Tutor(grade,appLanguage);"profile"->Profile(grade,xp,correct,tried,dark,{dark=it;p.edit().putBoolean("dark",it).apply()},appLanguage,{appLanguage=it;p.edit().putString("app_language",it).apply()}){grade=-1;p.edit().putInt("grade",-1).apply();page="pick"}}};AnimatedVisibility(toast.isNotEmpty(),enter=slideInVertically{it}+fadeIn(),exit=fadeOut(),modifier=Modifier.align(Alignment.BottomCenter).padding(8.dp)){Surface(shape=RoundedCornerShape(18.dp),tonalElevation=8.dp){AppText(toast,Modifier.padding(14.dp),fontWeight=FontWeight.Bold)}}}}
  }
 }
 
-@Composable private fun Pick(g:Int,choose:(Int)->Unit){val pulse=rememberInfiniteTransition(label="p").animateFloat(1f,1.06f,infiniteRepeatable(tween(1100),RepeatMode.Reverse),label="p").value;Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF111827),Color(0xFF312E81),Color(0xFF0F766E)))).verticalScroll(rememberScrollState())){Column(Modifier.padding(22.dp),horizontalAlignment=Alignment.CenterHorizontally){Spacer(Modifier.height(25.dp));Surface(shape=CircleShape,color=Color.White.copy(.13f),modifier=Modifier.size(100.dp).scale(pulse)){Box(contentAlignment=Alignment.Center){Text("N",color=Color.White,fontSize=48.sp,fontWeight=FontWeight.Black)}};Text("STUDYPILOT AI",color=Color.White,fontSize=29.sp,fontWeight=FontWeight.Black);Text("Learn • Practice • Master",color=Color.White.copy(.7f));Spacer(Modifier.height(22.dp));Text("Choose class",color=Color.White,fontSize=21.sp,fontWeight=FontWeight.Black);Text("Class 8 includes Class 1–8 learning.",color=Color.White.copy(.65f));Spacer(Modifier.height(10.dp));listOf(-1 to "🌎 All Classes",1 to "🎒 Class 1",2 to "🎒 Class 2",3 to "🎒 Class 3",4 to "🎒 Class 4",5 to "🎒 Class 5",6 to "🎒 Class 6",7 to "🎒 Class 7",8 to "🚀 Class 8",9 to "🏆 Class 9+").forEach{(v,t)->Card(onClick={choose(v)},modifier=Modifier.fillMaxWidth().padding(4.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=Color.White.copy(.11f))){Row(Modifier.padding(16.dp)){Text(t,color=Color.White,fontWeight=FontWeight.Bold);Spacer(Modifier.weight(1f));Text(if(g==v)"✓" else "›",color=Color.White,fontSize=22.sp)}}};Text("Generated practice set • curriculum review pending",color=Color.White.copy(.55f),fontSize=12.sp,modifier=Modifier.padding(top=10.dp))}}}
+@Composable private fun Pick(g:Int,choose:(Int)->Unit){val pulse=rememberInfiniteTransition(label="p").animateFloat(1f,1.06f,infiniteRepeatable(tween(1100),RepeatMode.Reverse),label="p").value;Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF111827),Color(0xFF312E81),Color(0xFF0F766E)))).verticalScroll(rememberScrollState())){Column(Modifier.padding(22.dp),horizontalAlignment=Alignment.CenterHorizontally){Spacer(Modifier.height(25.dp));Surface(shape=CircleShape,color=Color.White.copy(.13f),modifier=Modifier.size(100.dp).scale(pulse)){Box(contentAlignment=Alignment.Center){AppText("N",color=Color.White,fontSize=48.sp,fontWeight=FontWeight.Black)}};AppText("STUDYPILOT AI",color=Color.White,fontSize=29.sp,fontWeight=FontWeight.Black);AppText("Learn • Practice • Master",color=Color.White.copy(.7f));Spacer(Modifier.height(22.dp));AppText("Choose class",color=Color.White,fontSize=21.sp,fontWeight=FontWeight.Black);LanguagePicker(language,setLanguage);AppText("Class 8 includes Class 1–8 learning.",color=Color.White.copy(.65f));Spacer(Modifier.height(10.dp));listOf(-1 to "🌎 All Classes",1 to "🎒 Class 1",2 to "🎒 Class 2",3 to "🎒 Class 3",4 to "🎒 Class 4",5 to "🎒 Class 5",6 to "🎒 Class 6",7 to "🎒 Class 7",8 to "🚀 Class 8",9 to "🏆 Class 9+").forEach{(v,t)->Card(onClick={choose(v)},modifier=Modifier.fillMaxWidth().padding(4.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=Color.White.copy(.11f))){Row(Modifier.padding(16.dp)){AppText(t,color=Color.White,fontWeight=FontWeight.Bold);Spacer(Modifier.weight(1f));AppText(if(g==v)"✓" else "›",color=Color.White,fontSize=22.sp)}}};AppText("Generated practice set • curriculum review pending",color=Color.White.copy(.55f),fontSize=12.sp,modifier=Modifier.padding(top=10.dp))}}}
 
-@Composable private fun Home(g:Int,xp:Int,ok:Int,tried:Int,tasks:Int,notes:Int,nav:(String)->Unit){val acc=if(tried==0)0 else ok*100/tried;val pulse=rememberInfiniteTransition(label="hero").animateFloat(.97f,1f,infiniteRepeatable(tween(1400),RepeatMode.Reverse),label="hero").value;LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){item{Text("Welcome back 👋",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);Text(if(g<0)"All Classes" else "Class $g",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)};item{Card(Modifier.fillMaxWidth().scale(pulse),shape=RoundedCornerShape(30.dp)){Box(Modifier.background(Brush.linearGradient(listOf(palette[(xp/100)%5],palette[(xp/100+2)%5])))){Column(Modifier.padding(22.dp)){Text("LEVEL ${xp/500+1} • $xp XP",color=Color.White.copy(.8f),fontWeight=FontWeight.Bold);Text("Your learning journey",color=Color.White,fontSize=27.sp,fontWeight=FontWeight.Black);Spacer(Modifier.height(12.dp));LinearProgressIndicator({(xp%500)/500f},Modifier.fillMaxWidth().height(9.dp),color=Color.White,trackColor=Color.White.copy(.2f));Spacer(Modifier.height(9.dp));Text("🎯 $acc% accuracy   📚 $tried attempts",color=Color.White,fontWeight=FontWeight.Bold)}}}};item{Text("Explore",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)};item{Action("🎮","Quiz Arena","Practice MCQs • Easy / Medium / Hard",palette[0]){nav("quiz")}};item{Action("📚","Study Library","Subjects + explanations",palette[1]){nav("learn")}};item{Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Stat("Questions",tried.toString(),palette[2],Modifier.weight(1f));Stat("Notes",notes.toString(),palette[3],Modifier.weight(1f));Stat("Tasks",tasks.toString(),palette[4],Modifier.weight(1f))}};item{Action("🃏","Revision Hub","Notes + planner",palette[2]){nav("library")}};item{Action("🏆","Stats + Settings","XP + theme",palette[3]){nav("profile")}}}}
-@Composable private fun Action(ic:String,title:String,sub:String,c:Color,go:()->Unit){Card(Modifier.fillMaxWidth().clickable{go()},shape=RoundedCornerShape(22.dp)){Row(Modifier.padding(17.dp),verticalAlignment=Alignment.CenterVertically){Surface(shape=CircleShape,color=c.copy(.13f),modifier=Modifier.size(50.dp)){Box(contentAlignment=Alignment.Center){Text(ic,fontSize=25.sp)}};Spacer(Modifier.width(13.dp));Column(Modifier.weight(1f)){Text(title,fontWeight=FontWeight.Black);Text(sub,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)};Text("›",fontSize=28.sp,color=c)}}}
-@Composable private fun Stat(n:String,v:String,c:Color,m:Modifier){Card(m,shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(13.dp)){Text(v,fontSize=22.sp,fontWeight=FontWeight.Black,color=c);Text(n,fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}
+@Composable private fun Home(g:Int,xp:Int,ok:Int,tried:Int,tasks:Int,notes:Int,nav:(String)->Unit){val acc=if(tried==0)0 else ok*100/tried;val pulse=rememberInfiniteTransition(label="hero").animateFloat(.97f,1f,infiniteRepeatable(tween(1400),RepeatMode.Reverse),label="hero").value;LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){item{AppText("Welcome back 👋",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);AppText(if(g<0)"All Classes" else "Class $g",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)};item{Card(Modifier.fillMaxWidth().scale(pulse),shape=RoundedCornerShape(30.dp)){Box(Modifier.background(Brush.linearGradient(listOf(palette[(xp/100)%5],palette[(xp/100+2)%5])))){Column(Modifier.padding(22.dp)){AppText("LEVEL ${xp/500+1} • $xp XP",color=Color.White.copy(.8f),fontWeight=FontWeight.Bold);AppText("Your learning journey",color=Color.White,fontSize=27.sp,fontWeight=FontWeight.Black);Spacer(Modifier.height(12.dp));LinearProgressIndicator({(xp%500)/500f},Modifier.fillMaxWidth().height(9.dp),color=Color.White,trackColor=Color.White.copy(.2f));Spacer(Modifier.height(9.dp));AppText("🎯 $acc% accuracy   📚 $tried attempts",color=Color.White,fontWeight=FontWeight.Bold)}}}};item{AppText("Explore",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)};item{Action("🎮","Quiz Arena","Practice MCQs • Easy / Medium / Hard",palette[0]){nav("quiz")}};item{Action("📚","Study Library","Subjects + explanations",palette[1]){nav("learn")}};item{Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Stat("Questions",tried.toString(),palette[2],Modifier.weight(1f));Stat("Notes",notes.toString(),palette[3],Modifier.weight(1f));Stat("Tasks",tasks.toString(),palette[4],Modifier.weight(1f))}};item{Action("🃏","Revision Hub","Notes + planner",palette[2]){nav("library")}};item{Action("🏆","Stats + Settings","XP + theme",palette[3]){nav("profile")}}}}
+@Composable private fun Action(ic:String,title:String,sub:String,c:Color,go:()->Unit){Card(Modifier.fillMaxWidth().clickable{go()},shape=RoundedCornerShape(22.dp)){Row(Modifier.padding(17.dp),verticalAlignment=Alignment.CenterVertically){Surface(shape=CircleShape,color=c.copy(.13f),modifier=Modifier.size(50.dp)){Box(contentAlignment=Alignment.Center){AppText(ic,fontSize=25.sp)}};Spacer(Modifier.width(13.dp));Column(Modifier.weight(1f)){AppText(title,fontWeight=FontWeight.Black);AppText(sub,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)};AppText("›",fontSize=28.sp,color=c)}}}
+@Composable private fun Stat(n:String,v:String,c:Color,m:Modifier){Card(m,shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(13.dp)){AppText(v,fontSize=22.sp,fontWeight=FontWeight.Black,color=c);AppText(n,fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}
 
-@Composable private fun Learn(g:Int,start:()->Unit){var sub by remember{mutableStateOf("Mathematics")};val list=if(g<0||g>=9)subs else subs.take(6);Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){Text("Study Library",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);Text("Study → revise → practice → test",color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(12.dp));list.forEachIndexed{ix,(name,icon)->Card(onClick={sub=name},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=if(sub==name)palette[ix%5].copy(.15f)else MaterialTheme.colorScheme.surfaceVariant)){Row(Modifier.padding(15.dp),verticalAlignment=Alignment.CenterVertically){Text(icon,fontSize=23.sp);Spacer(Modifier.width(12.dp));Text(name,Modifier.weight(1f),fontWeight=FontWeight.Black);Text(if(sub==name)"✓" else "›",color=palette[ix%5])}}};Spacer(Modifier.height(12.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(25.dp)){Column(Modifier.padding(20.dp)){Text("📖 $sub",fontSize=23.sp,fontWeight=FontWeight.Black);Text("Class ${if(g<0)"1–9+" else "1–$g"} • Generated practice set • curriculum review pending per difficulty",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(8.dp));Text("MCQ Study Library",fontWeight=FontWeight.Bold);Text("Every test question has a unique ID and an explanation.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(12.dp));Button(start,modifier=Modifier.fillMaxWidth()){Text("START PRACTICE")}}}}}
+@Composable private fun Learn(g:Int,start:()->Unit){var sub by remember{mutableStateOf("Mathematics")};val list=if(g<0||g>=9)subs else subs.take(6);Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){AppText("Study Library",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);AppText("Study → revise → practice → test",color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(12.dp));list.forEachIndexed{ix,(name,icon)->Card(onClick={sub=name},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=if(sub==name)palette[ix%5].copy(.15f)else MaterialTheme.colorScheme.surfaceVariant)){Row(Modifier.padding(15.dp),verticalAlignment=Alignment.CenterVertically){AppText(icon,fontSize=23.sp);Spacer(Modifier.width(12.dp));AppText(name,Modifier.weight(1f),fontWeight=FontWeight.Black);AppText(if(sub==name)"✓" else "›",color=palette[ix%5])}}};Spacer(Modifier.height(12.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(25.dp)){Column(Modifier.padding(20.dp)){AppText("📖 $sub",fontSize=23.sp,fontWeight=FontWeight.Black);AppText("Class ${if(g<0)"1–9+" else "1–$g"} • Generated practice set • curriculum review pending per difficulty",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(8.dp));AppText("MCQ Study Library",fontWeight=FontWeight.Bold);AppText("Every test question has a unique ID and an explanation.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(12.dp));Button(start,modifier=Modifier.fillMaxWidth()){AppText("START PRACTICE")}}}}}
 
-@Composable private fun Quiz(g:Int,record:(Boolean)->Unit,toast:(String)->Unit){
+@Composable private fun Quiz(g:Int,appLanguage:String,record:(Boolean)->Unit,toast:(String)->Unit){
  var sub by remember{mutableStateOf("Mathematics")}
  var diff by remember{mutableStateOf("Mixed")}
  var size by remember{mutableIntStateOf(10)}
@@ -66,73 +66,73 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   val maxG=if(g<0)9 else g
  val qs=remember(sub,diff,size,seed,g,fromGrade){test(g,sub,diff,size,seed,fromGrade)}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
-  Text("Quiz Arena",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
-   if(g>0){Text("Question class range",fontWeight=FontWeight.Black);Row(Modifier.horizontalScroll(rememberScrollState())){(1..g).forEach{from->FilterChip(fromGrade==from,{fromGrade=from},label={Text("Class $from–$g")},modifier=Modifier.padding(end=4.dp))}}}
-  Text("Practice questions with explanations and read-aloud support. Choose 2,500 for a long mega test.",color=MaterialTheme.colorScheme.onSurfaceVariant)
-  Spacer(Modifier.height(12.dp));Text("Subject",fontWeight=FontWeight.Black)
-  Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){subs.forEach{(n,_)->FilterChip(sub==n,{sub=n},label={Text(n)})}}
-  Spacer(Modifier.height(10.dp));Row{listOf("Mixed","Easy","Medium","Hard").forEach{FilterChip(diff==it,{diff=it},label={Text(it)},modifier=Modifier.padding(end=4.dp))}}
-  Spacer(Modifier.height(10.dp));Row(Modifier.horizontalScroll(rememberScrollState())){listOf(10,20,50,100,2500).forEach{FilterChip(size==it,{size=it},label={Text(if(it==2500)"2,500 Mega Test" else "$it")},modifier=Modifier.padding(end=4.dp))}}
+  AppText("Quiz Arena",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
+   if(g>0){AppText("Question class range",fontWeight=FontWeight.Black);Row(Modifier.horizontalScroll(rememberScrollState())){(1..g).forEach{from->FilterChip(fromGrade==from,{fromGrade=from},label={AppText("Class $from–$g")},modifier=Modifier.padding(end=4.dp))}}}
+  AppText("Practice questions with explanations and read-aloud support. Choose 2,500 for a long mega test.",color=MaterialTheme.colorScheme.onSurfaceVariant)
+  Spacer(Modifier.height(12.dp));AppText("Subject",fontWeight=FontWeight.Black)
+  Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){subs.forEach{(n,_)->FilterChip(sub==n,{sub=n},label={AppText(n)})}}
+  Spacer(Modifier.height(10.dp));Row{listOf("Mixed","Easy","Medium","Hard").forEach{FilterChip(diff==it,{diff=it},label={AppText(it)},modifier=Modifier.padding(end=4.dp))}}
+  Spacer(Modifier.height(10.dp));Row(Modifier.horizontalScroll(rememberScrollState())){listOf(10,20,50,100,2500).forEach{FilterChip(size==it,{size=it},label={AppText(if(it==2500)"2,500 Mega Test" else "$it")},modifier=Modifier.padding(end=4.dp))}}
   Spacer(Modifier.height(16.dp));BigCard(palette[0],"🎮 READY","Practice MCQs • AI explanation • speaker support"){start=true}
  };return}
  if(at>=qs.size){Column(Modifier.fillMaxSize().padding(20.dp),horizontalAlignment=Alignment.CenterHorizontally){
-  Spacer(Modifier.height(40.dp));Text("🏆",fontSize=70.sp);Text("Test Complete",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
-  Text("$score / $size",fontSize=34.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
-  Text("Accuracy ${score*100/size}%",color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(18.dp))
-  Button({seed++;at=0;pick=-1;score=0;revealUses=0}){Text("NEW UNIQUE TEST")}
+  Spacer(Modifier.height(40.dp));AppText("🏆",fontSize=70.sp);AppText("Test Complete",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
+  AppText("$score / $size",fontSize=34.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
+  AppText("Accuracy ${score*100/size}%",color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(18.dp))
+  Button({seed++;at=0;pick=-1;score=0;revealUses=0}){AppText("NEW UNIQUE TEST")}
  };return}
  val q=qs[at]
  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
-  Row{Text("${at+1}/$size",fontWeight=FontWeight.Black);Spacer(Modifier.weight(1f));Text("+20 XP",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)}
+  Row{AppText("${at+1}/$size",fontWeight=FontWeight.Black);Spacer(Modifier.weight(1f));AppText("+20 XP",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)}
   LinearProgressIndicator({(at+if(pick>=0)1 else 0).toFloat()/size},Modifier.fillMaxWidth().height(8.dp));Spacer(Modifier.height(10.dp))
-  Text("Class ${q.grade} • ${q.subject} • ${q.diff} • ${q.topic}",color=MaterialTheme.colorScheme.primary,fontSize=12.sp,fontWeight=FontWeight.Bold)
-  Card(Modifier.fillMaxWidth().padding(vertical=10.dp),shape=RoundedCornerShape(25.dp)){Text(q.q,Modifier.padding(21.dp),fontSize=19.sp,fontWeight=FontWeight.Black)}
+  AppText("Class ${q.grade} • ${q.subject} • ${q.diff} • ${q.topic}",color=MaterialTheme.colorScheme.primary,fontSize=12.sp,fontWeight=FontWeight.Bold)
+  Card(Modifier.fillMaxWidth().padding(vertical=10.dp),shape=RoundedCornerShape(25.dp)){AppText(q.q,Modifier.padding(21.dp),fontSize=19.sp,fontWeight=FontWeight.Black)}
   q.opts.forEachIndexed{i,o->
    val bad=pick==i&&i!=q.ans
    Card(onClick={if(pick<0){pick=i;record(i==q.ans);if(i==q.ans)score++;toast(if(i==q.ans)"Correct! 🎉" else "Review explanation 📘")}},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=if(bad)Color(0xFFE83E8C).copy(.16f)else MaterialTheme.colorScheme.surfaceVariant)){
-    Row(Modifier.padding(15.dp)){Text("${'A'+i}",fontWeight=FontWeight.Black,color=if(bad)Color(0xFFE83E8C)else MaterialTheme.colorScheme.primary);Spacer(Modifier.width(12.dp));Text(o,fontWeight=FontWeight.SemiBold)}
+    Row(Modifier.padding(15.dp)){AppText("${'A'+i}",fontWeight=FontWeight.Black,color=if(bad)Color(0xFFE83E8C)else MaterialTheme.colorScheme.primary);Spacer(Modifier.width(12.dp));AppText(o,fontWeight=FontWeight.SemiBold)}
    }
   }
   if(pick>=0){
    Card(Modifier.fillMaxWidth().padding(top=8.dp),shape=RoundedCornerShape(19.dp)){Column(Modifier.padding(15.dp)){
-    Text(if(pick==q.ans)"✓ Correct" else "✕ Review",fontWeight=FontWeight.Black)
-    Text(if(pick==q.ans) "Correct — use StudyPilot AI to learn why." else "Review with StudyPilot AI to understand the mistake.",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-    AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=q.opts[pick],megaTest=size==2500,revealUses=revealUses,onReveal={if(size==2500&&revealUses<10)revealUses++})
-    Spacer(Modifier.height(8.dp));Button({at++;pick=-1},modifier=Modifier.fillMaxWidth()){Text(if(at==size-1)"FINISH" else "NEXT QUESTION →")}
+    AppText(if(pick==q.ans)"✓ Correct" else "✕ Review",fontWeight=FontWeight.Black)
+    AppText(if(pick==q.ans) "Correct — use StudyPilot AI to learn why." else "Review with StudyPilot AI to understand the mistake.",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=q.opts[pick],appLanguage=appLanguage,megaTest=size==2500,revealUses=revealUses,onReveal={if(size==2500&&revealUses<10)revealUses++})
+    Spacer(Modifier.height(8.dp));Button({at++;pick=-1},modifier=Modifier.fillMaxWidth()){AppText(if(at==size-1)"FINISH" else "NEXT QUESTION →")}
    }}
   } else {
-   AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=null,megaTest=size==2500,revealUses=revealUses,onReveal={if(size==2500&&revealUses<10)revealUses++})
+   AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=null,appLanguage=appLanguage,megaTest=size==2500,revealUses=revealUses,onReveal={if(size==2500&&revealUses<10)revealUses++})
   }
  }
 }
 
-@Composable private fun BigCard(c:Color,title:String,body:String,go:()->Unit){Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(27.dp)){Box(Modifier.background(Brush.linearGradient(listOf(c,c.copy(.72f))))){Column(Modifier.padding(21.dp)){Text(title,color=Color.White,fontSize=24.sp,fontWeight=FontWeight.Black);Text(body,color=Color.White.copy(.86f));Spacer(Modifier.height(12.dp));Button(go,colors=ButtonDefaults.buttonColors(containerColor=Color.White,contentColor=c),modifier=Modifier.fillMaxWidth()){Text("ENTER ARENA")}}}}}
+@Composable private fun BigCard(c:Color,title:String,body:String,go:()->Unit){Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(27.dp)){Box(Modifier.background(Brush.linearGradient(listOf(c,c.copy(.72f))))){Column(Modifier.padding(21.dp)){AppText(title,color=Color.White,fontSize=24.sp,fontWeight=FontWeight.Black);AppText(body,color=Color.White.copy(.86f));Spacer(Modifier.height(12.dp));Button(go,colors=ButtonDefaults.buttonColors(containerColor=Color.White,contentColor=c),modifier=Modifier.fillMaxWidth()){AppText("ENTER ARENA")}}}}}
 
 @Composable private fun Library(g:Int,notes:List<Note>,tasks:List<Task>,saveNotes:(List<Note>)->Unit,saveTasks:(List<Task>)->Unit){
  var tab by remember{mutableIntStateOf(0)}
  var title by remember{mutableStateOf("")};var body by remember{mutableStateOf("")};var taskText by remember{mutableStateOf("")}
  var revealed by remember{mutableStateOf(setOf<Long>())}
  Column(Modifier.fillMaxSize().padding(16.dp)){
-  Text("Study Library",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
-  Text("Notes, tasks, flashcards, MCQ bank and focus tools — stored locally.",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=13.sp)
-  Row(Modifier.horizontalScroll(rememberScrollState())){listOf("Notes","Planner","MCQ Bank","Flashcards","Focus","Tools").forEachIndexed{index,label->FilterChip(tab==index,{tab=index},label={Text(label)},modifier=Modifier.padding(end=6.dp) )}}
+  AppText("Study Library",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
+  AppText("Notes, tasks, flashcards, MCQ bank and focus tools — stored locally.",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=13.sp)
+  Row(Modifier.horizontalScroll(rememberScrollState())){listOf("Notes","Planner","MCQ Bank","Flashcards","Focus","Tools").forEachIndexed{index,label->FilterChip(tab==index,{tab=index},label={AppText(label)},modifier=Modifier.padding(end=6.dp) )}}
   Spacer(Modifier.height(10.dp))
   if(tab==0){
-   OutlinedTextField(title,{title=it},label={Text("Note title")},modifier=Modifier.fillMaxWidth())
-   Spacer(Modifier.height(7.dp));OutlinedTextField(body,{body=it},label={Text("Study note / answer")},modifier=Modifier.fillMaxWidth().height(120.dp))
-   Spacer(Modifier.height(7.dp));Button({if(title.isNotBlank()){saveNotes(notes+Note(System.currentTimeMillis(),title,body));title="";body=""}},modifier=Modifier.fillMaxWidth()){Text("SAVE NOTE")}
+   OutlinedTextField(title,{title=it},label={AppText("Note title")},modifier=Modifier.fillMaxWidth())
+   Spacer(Modifier.height(7.dp));OutlinedTextField(body,{body=it},label={AppText("Study note / answer")},modifier=Modifier.fillMaxWidth().height(120.dp))
+   Spacer(Modifier.height(7.dp));Button({if(title.isNotBlank()){saveNotes(notes+Note(System.currentTimeMillis(),title,body));title="";body=""}},modifier=Modifier.fillMaxWidth()){AppText("SAVE NOTE")}
    Spacer(Modifier.height(10.dp))
-   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(notes.reversed(),key={it.id}){n->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(15.dp)){Text(n.title,fontWeight=FontWeight.Black);Text(n.body,fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Text("DELETE",Modifier.clickable{saveNotes(notes.filterNot{it.id==n.id})}.padding(top=7.dp),fontSize=11.sp,color=palette[4],fontWeight=FontWeight.Bold)}}}}
+   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(notes.reversed(),key={it.id}){n->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(15.dp)){AppText(n.title,fontWeight=FontWeight.Black);AppText(n.body,fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);AppText("DELETE",Modifier.clickable{saveNotes(notes.filterNot{it.id==n.id})}.padding(top=7.dp),fontSize=11.sp,color=palette[4],fontWeight=FontWeight.Bold)}}}}
   }else if(tab==1){
-   OutlinedTextField(taskText,{taskText=it},label={Text("New study task")},modifier=Modifier.fillMaxWidth())
-   Spacer(Modifier.height(7.dp));Button({if(taskText.isNotBlank()){saveTasks(tasks+Task(System.currentTimeMillis(),taskText,false));taskText=""}},modifier=Modifier.fillMaxWidth()){Text("ADD TASK")}
+   OutlinedTextField(taskText,{taskText=it},label={AppText("New study task")},modifier=Modifier.fillMaxWidth())
+   Spacer(Modifier.height(7.dp));Button({if(taskText.isNotBlank()){saveTasks(tasks+Task(System.currentTimeMillis(),taskText,false));taskText=""}},modifier=Modifier.fillMaxWidth()){AppText("ADD TASK")}
    Spacer(Modifier.height(10.dp))
-   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(tasks,key={it.id}){t->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Row(Modifier.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Checkbox(t.done,{v->saveTasks(tasks.map{if(it.id==t.id)it.copy(done=v)else it})});Text(t.text,Modifier.weight(1f),fontWeight=FontWeight.Bold);Text("✕",Modifier.clickable{saveTasks(tasks.filterNot{it.id==t.id})})}}}}
+   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(tasks,key={it.id}){t->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Row(Modifier.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Checkbox(t.done,{v->saveTasks(tasks.map{if(it.id==t.id)it.copy(done=v)else it})});AppText(t.text,Modifier.weight(1f),fontWeight=FontWeight.Bold);AppText("✕",Modifier.clickable{saveTasks(tasks.filterNot{it.id==t.id})})}}}}
   }else if(tab==2){
    QuestionBank(g,Modifier.weight(1f))
   }else if(tab==3){
-   if(notes.isEmpty())Text("Create a note first, then it will appear here as a revision flashcard.",color=MaterialTheme.colorScheme.onSurfaceVariant)
-   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(notes.reversed(),key={it.id}){n->Card(Modifier.fillMaxWidth().clickable{revealed=if(n.id in revealed)revealed-n.id else revealed+n.id},shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(18.dp)){Text(if(n.id in revealed)"ANSWER" else "QUESTION",fontSize=11.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(5.dp));Text(n.title,fontWeight=FontWeight.Black,fontSize=17.sp);if(n.id in revealed){Spacer(Modifier.height(8.dp));Text(n.body.ifBlank{"No answer saved yet."},color=MaterialTheme.colorScheme.onSurfaceVariant)}else{Spacer(Modifier.height(8.dp));Text("Tap to reveal answer",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}}}
+   if(notes.isEmpty())AppText("Create a note first, then it will appear here as a revision flashcard.",color=MaterialTheme.colorScheme.onSurfaceVariant)
+   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(notes.reversed(),key={it.id}){n->Card(Modifier.fillMaxWidth().clickable{revealed=if(n.id in revealed)revealed-n.id else revealed+n.id},shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(18.dp)){AppText(if(n.id in revealed)"ANSWER" else "QUESTION",fontSize=11.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(5.dp));AppText(n.title,fontWeight=FontWeight.Black,fontSize=17.sp);if(n.id in revealed){Spacer(Modifier.height(8.dp));AppText(n.body.ifBlank{"No answer saved yet."},color=MaterialTheme.colorScheme.onSurfaceVariant)}else{Spacer(Modifier.height(8.dp));AppText("Tap to reveal answer",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}}}
   }else if(tab==4){
    FocusTimer()
   }else{
@@ -156,27 +156,27 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  val pageCount=maxOf(1,(filtered.size+24)/25)
  val questions=remember(filtered,page){filtered.drop(page*25).take(25)}
  Column(modifier.fillMaxSize()){
-  Text("MCQ Question Bank",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
-  Text("2,500 generated items per class × subject × difficulty. Curriculum review is still needed.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+  AppText("MCQ Question Bank",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+  AppText("2,500 generated items per class × subject × difficulty. Curriculum review is still needed.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
   Spacer(Modifier.height(7.dp))
-  Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(5.dp)){(1..9).forEach{n->FilterChip(g==n,{g=n;page=0},label={Text(if(n==9)"9+" else "$n")})}}
-  Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(5.dp)){subs.forEach{(name,_)->FilterChip(subject==name,{subject=name;page=0},label={Text(name)})}}
-  Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){listOf("Easy","Medium","Hard").forEach{d->FilterChip(difficulty==d,{difficulty=d;page=0},label={Text(d)})};FilterChip(savedOnly,{savedOnly=!savedOnly;page=0},label={Text("★ Bookmarks")})}
-  OutlinedTextField(query,{query=it;page=0},label={Text("Search questions, options or explanations")},singleLine=true,modifier=Modifier.fillMaxWidth())
-  Text("Showing ${if(filtered.isEmpty())0 else page*25+1}–${minOf((page+1)*25,filtered.size)} of ${filtered.size} matches • Page ${page+1}/$pageCount",fontSize=11.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(vertical=5.dp))
+  Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(5.dp)){(1..9).forEach{n->FilterChip(g==n,{g=n;page=0},label={AppText(if(n==9)"9+" else "$n")})}}
+  Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(5.dp)){subs.forEach{(name,_)->FilterChip(subject==name,{subject=name;page=0},label={AppText(name)})}}
+  Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){listOf("Easy","Medium","Hard").forEach{d->FilterChip(difficulty==d,{difficulty=d;page=0},label={AppText(d)})};FilterChip(savedOnly,{savedOnly=!savedOnly;page=0},label={AppText("★ Bookmarks")})}
+  OutlinedTextField(query,{query=it;page=0},label={AppText("Search questions, options or explanations")},singleLine=true,modifier=Modifier.fillMaxWidth())
+  AppText("Showing ${if(filtered.isEmpty())0 else page*25+1}–${minOf((page+1)*25,filtered.size)} of ${filtered.size} matches • Page ${page+1}/$pageCount",fontSize=11.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(vertical=5.dp))
   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){
    items(questions,key={it.id}){q->var revealBankAnswer by remember(q.id){mutableStateOf(false)};Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(13.dp)){
-    Row(verticalAlignment=Alignment.CenterVertically){Text("Class ${q.grade} • ${q.subject} • ${q.diff} • ${q.topic}",fontSize=10.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,modifier=Modifier.weight(1f));Text(if(q.id.toString() in bookmarks)"★ Saved" else "☆ Save",Modifier.clickable{val next=bookmarks.toMutableSet();if(q.id.toString() in next)next.remove(q.id.toString())else next.add(q.id.toString());bookmarks=next;prefs.edit().putStringSet("bookmarks",next).apply()}.padding(4.dp),fontSize=12.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)}
-    Spacer(Modifier.height(5.dp));Text(q.q,fontWeight=FontWeight.Bold)
-    q.opts.forEachIndexed{ix,opt->Text("${'A'+ix}. $opt",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurface,modifier=Modifier.padding(top=3.dp))}
-    Spacer(Modifier.height(5.dp));OutlinedButton(onClick={revealBankAnswer=!revealBankAnswer}){Text(if(revealBankAnswer)"Hide Correct Answer" else "Show Correct Answer")};if(revealBankAnswer)Text("Correct answer: ${q.opts[q.ans]}",fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary,fontSize=13.sp)
-    if(revealBankAnswer)Text(q.exp,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=3.dp))
+    Row(verticalAlignment=Alignment.CenterVertically){AppText("Class ${q.grade} • ${q.subject} • ${q.diff} • ${q.topic}",fontSize=10.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,modifier=Modifier.weight(1f));AppText(if(q.id.toString() in bookmarks)"★ Saved" else "☆ Save",Modifier.clickable{val next=bookmarks.toMutableSet();if(q.id.toString() in next)next.remove(q.id.toString())else next.add(q.id.toString());bookmarks=next;prefs.edit().putStringSet("bookmarks",next).apply()}.padding(4.dp),fontSize=12.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)}
+    Spacer(Modifier.height(5.dp));AppText(q.q,fontWeight=FontWeight.Bold)
+    q.opts.forEachIndexed{ix,opt->AppText("${'A'+ix}. $opt",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurface,modifier=Modifier.padding(top=3.dp))}
+    Spacer(Modifier.height(5.dp));OutlinedButton(onClick={revealBankAnswer=!revealBankAnswer}){AppText(if(revealBankAnswer)"Hide Correct Answer" else "Show Correct Answer")};if(revealBankAnswer)AppText("Correct answer: ${q.opts[q.ans]}",fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary,fontSize=13.sp)
+    if(revealBankAnswer)AppText(q.exp,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=3.dp))
    }}}
   }
   Row(verticalAlignment=Alignment.CenterVertically,modifier=Modifier.padding(top=5.dp)){
-   OutlinedButton(onClick={page=(page-1).coerceAtLeast(0)},enabled=page>0){Text("← Previous")}
-   Spacer(Modifier.weight(1f));Text("${page+1}/$pageCount",fontWeight=FontWeight.Bold)
-   Spacer(Modifier.weight(1f));Button(onClick={page=(page+1).coerceAtMost(pageCount-1)},enabled=page<pageCount-1){Text("Next →")}
+   OutlinedButton(onClick={page=(page-1).coerceAtLeast(0)},enabled=page>0){AppText("← Previous")}
+   Spacer(Modifier.weight(1f));AppText("${page+1}/$pageCount",fontWeight=FontWeight.Bold)
+   Spacer(Modifier.weight(1f));Button(onClick={page=(page+1).coerceAtMost(pageCount-1)},enabled=page<pageCount-1){AppText("Next →")}
   }
  }
 }
@@ -187,14 +187,14 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var running by remember{mutableStateOf(false)}
  LaunchedEffect(running){while(running&&remaining>0){delay(1000);if(running)remaining=(remaining-1).coerceAtLeast(0)};if(remaining==0)running=false}
  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),horizontalAlignment=Alignment.CenterHorizontally){
-  Text("Focus Studio",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
-  Text("Offline Pomodoro timer • take a short break between sessions",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,textAlign=TextAlign.Center)
+  AppText("Focus Studio",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+  AppText("Offline Pomodoro timer • take a short break between sessions",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,textAlign=TextAlign.Center)
   Spacer(Modifier.height(18.dp))
-  Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf(15,25,45).forEach{m->FilterChip(minutes==m,{minutes=m;remaining=m*60;running=false},label={Text("$m min")})}}
+  Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf(15,25,45).forEach{m->FilterChip(minutes==m,{minutes=m;remaining=m*60;running=false},label={AppText("$m min")})}}
   Spacer(Modifier.height(18.dp))
-  Card(shape=RoundedCornerShape(30.dp)){Column(Modifier.padding(28.dp),horizontalAlignment=Alignment.CenterHorizontally){Text("FOCUS TIME",fontSize=12.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary);Text("${remaining/60}:${(remaining%60).toString().padStart(2,'0')}",fontSize=48.sp,fontWeight=FontWeight.Black);Text(if(remaining==0)"Session complete 🎉" else if(running)"Stay focused" else "Ready when you are",color=MaterialTheme.colorScheme.onSurfaceVariant)}}
+  Card(shape=RoundedCornerShape(30.dp)){Column(Modifier.padding(28.dp),horizontalAlignment=Alignment.CenterHorizontally){AppText("FOCUS TIME",fontSize=12.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary);AppText("${remaining/60}:${(remaining%60).toString().padStart(2,'0')}",fontSize=48.sp,fontWeight=FontWeight.Black);AppText(if(remaining==0)"Session complete 🎉" else if(running)"Stay focused" else "Ready when you are",color=MaterialTheme.colorScheme.onSurfaceVariant)}}
   Spacer(Modifier.height(16.dp))
-  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Button({if(remaining==0)remaining=minutes*60;running=!running}){Text(if(running)"Pause" else "Start")};OutlinedButton({running=false;remaining=minutes*60}){Text("Reset")}}
+  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Button({if(remaining==0)remaining=minutes*60;running=!running}){AppText(if(running)"Pause" else "Start")};OutlinedButton({running=false;remaining=minutes*60}){AppText("Reset")}}
  }
 }
 
@@ -208,34 +208,34 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())){
   var numberForMath by remember{mutableStateOf("12")}
    val mathN=numberForMath.toLongOrNull()
-   Text("Quick Study Tools",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+   AppText("Quick Study Tools",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
    Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
-    Text("Number Explorer",fontWeight=FontWeight.Black)
-    OutlinedTextField(numberForMath,{numberForMath=it.filter{ch->ch.isDigit()||ch==45.toChar()}.take(12)},label={Text("Enter an integer")},singleLine=true,modifier=Modifier.fillMaxWidth())
-    if(mathN!=null && mathN!=0L && kotlin.math.abs(mathN)<=1000000000L){Text("Square: "+(mathN*mathN),fontWeight=FontWeight.SemiBold);Text("Cube: "+(mathN*mathN*mathN),fontWeight=FontWeight.SemiBold);val factors=(1L..kotlin.math.abs(mathN).coerceAtMost(100000L)).filter{mathN%it==0L};Text("Positive factors: "+factors.joinToString(", "),fontSize=12.sp);Text("Prime: "+(kotlin.math.abs(mathN)>1 && (2L..kotlin.math.sqrt(kotlin.math.abs(mathN).toDouble()).toLong()).none{mathN%it==0L}),fontSize=12.sp)} else if(mathN==0L) Text("Zero has no finite factor list.",fontSize=12.sp)
+    AppText("Number Explorer",fontWeight=FontWeight.Black)
+    OutlinedTextField(numberForMath,{numberForMath=it.filter{ch->ch.isDigit()||ch==45.toChar()}.take(12)},label={AppText("Enter an integer")},singleLine=true,modifier=Modifier.fillMaxWidth())
+    if(mathN!=null && mathN!=0L && kotlin.math.abs(mathN)<=1000000000L){AppText("Square: "+(mathN*mathN),fontWeight=FontWeight.SemiBold);AppText("Cube: "+(mathN*mathN*mathN),fontWeight=FontWeight.SemiBold);val factors=(1L..kotlin.math.abs(mathN).coerceAtMost(100000L)).filter{mathN%it==0L};AppText("Positive factors: "+factors.joinToString(", "),fontSize=12.sp);AppText("Prime: "+(kotlin.math.abs(mathN)>1 && (2L..kotlin.math.sqrt(kotlin.math.abs(mathN).toDouble()).toLong()).none{mathN%it==0L}),fontSize=12.sp)} else if(mathN==0L) AppText("Zero has no finite factor list.",fontSize=12.sp)
    }}
    Spacer(Modifier.height(10.dp))
-  Text("Offline calculator, multiplication tables and formula cards.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+  AppText("Offline calculator, multiplication tables and formula cards.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
   Spacer(Modifier.height(10.dp))
   Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
-   Text("Multiplication Table",fontWeight=FontWeight.Black)
-   OutlinedTextField(tableNumber,{tableNumber=it.filter{ch->ch.isDigit()}.take(8)},label={Text("Enter any whole number")},singleLine=true,modifier=Modifier.fillMaxWidth())
-   if(table!=null){(1..10).forEach{n->Text("$table × $n = ${table*n}",fontWeight=FontWeight.Medium,modifier=Modifier.padding(vertical=2.dp))}}
+   AppText("Multiplication Table",fontWeight=FontWeight.Black)
+   OutlinedTextField(tableNumber,{tableNumber=it.filter{ch->ch.isDigit()}.take(8)},label={AppText("Enter any whole number")},singleLine=true,modifier=Modifier.fillMaxWidth())
+   if(table!=null){(1..10).forEach{n->AppText("$table × $n = ${table*n}",fontWeight=FontWeight.Medium,modifier=Modifier.padding(vertical=2.dp))}}
   }}
   Spacer(Modifier.height(10.dp))
   Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
-   Text("Basic Calculator",fontWeight=FontWeight.Black)
-   Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){OutlinedTextField(left,{left=it},label={Text("Number A")},modifier=Modifier.weight(1f),singleLine=true);OutlinedTextField(right,{right=it},label={Text("Number B")},modifier=Modifier.weight(1f),singleLine=true)}
-   Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf("+","-","×","÷").forEach{op->FilterChip(operation==op,{operation=op},label={Text(op)})}}
-   Text("Result: $result",fontSize=20.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
+   AppText("Basic Calculator",fontWeight=FontWeight.Black)
+   Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){OutlinedTextField(left,{left=it},label={AppText("Number A")},modifier=Modifier.weight(1f),singleLine=true);OutlinedTextField(right,{right=it},label={AppText("Number B")},modifier=Modifier.weight(1f),singleLine=true)}
+   Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf("+","-","×","÷").forEach{op->FilterChip(operation==op,{operation=op},label={AppText(op)})}}
+   AppText("Result: $result",fontSize=20.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
   }}
   Spacer(Modifier.height(10.dp))
-  Text("Formula Cards",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
-  listOf("Rectangle area" to "A = length × width","Rectangle perimeter" to "P = 2 × (length + width)","Speed" to "speed = distance ÷ time","Density" to "density = mass ÷ volume","Ohm’s law" to "voltage = current × resistance","Circle circumference" to "C = 2 × π × radius","Average" to "average = total ÷ number of values").forEach{(name,formula)->Card(Modifier.fillMaxWidth().padding(vertical=3.dp),shape=RoundedCornerShape(15.dp)){Column(Modifier.padding(12.dp)){Text(name,fontWeight=FontWeight.Bold);Text(formula,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}
+  AppText("Formula Cards",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
+  listOf("Rectangle area" to "A = length × width","Rectangle perimeter" to "P = 2 × (length + width)","Speed" to "speed = distance ÷ time","Density" to "density = mass ÷ volume","Ohm’s law" to "voltage = current × resistance","Circle circumference" to "C = 2 × π × radius","Average" to "average = total ÷ number of values").forEach{(name,formula)->Card(Modifier.fillMaxWidth().padding(vertical=3.dp),shape=RoundedCornerShape(15.dp)){Column(Modifier.padding(12.dp)){AppText(name,fontWeight=FontWeight.Bold);AppText(formula,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}
  }
 }
 
-@Composable private fun Profile(g:Int,xp:Int,ok:Int,tried:Int,dark:Boolean,setDark:(Boolean)->Unit,change:()->Unit){val acc=if(tried==0)0 else ok*100/tried;Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){Text("Profile & Stats",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);BigCard(palette[1],"LEVEL ${xp/500+1}","$xp XP • $acc% accuracy",{});Spacer(Modifier.height(10.dp));Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Stat("Attempted",tried.toString(),palette[0],Modifier.weight(1f));Stat("Correct",ok.toString(),palette[2],Modifier.weight(1f))};Spacer(Modifier.height(10.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically){Text("Dark theme",modifier=Modifier.weight(1f),fontWeight=FontWeight.Bold);Switch(dark,setDark)}};Spacer(Modifier.height(8.dp));OutlinedButton(change,modifier=Modifier.fillMaxWidth()){Text("CHANGE CLASS")}}
+@Composable private fun Profile(g:Int,xp:Int,ok:Int,tried:Int,dark:Boolean,setDark:(Boolean)->Unit,language:String,setLanguage:(String)->Unit,change:()->Unit){val acc=if(tried==0)0 else ok*100/tried;Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){AppText("Profile & Stats",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);LanguagePicker(language,setLanguage);BigCard(palette[1],"LEVEL ${xp/500+1}","$xp XP • $acc% accuracy",{});Spacer(Modifier.height(10.dp));Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Stat("Attempted",tried.toString(),palette[0],Modifier.weight(1f));Stat("Correct",ok.toString(),palette[2],Modifier.weight(1f))};Spacer(Modifier.height(10.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically){AppText("Dark theme",modifier=Modifier.weight(1f),fontWeight=FontWeight.Bold);Switch(dark,setDark)}};Spacer(Modifier.height(8.dp));OutlinedButton(change,modifier=Modifier.fillMaxWidth()){AppText("CHANGE CLASS")}}
 }
 
 private fun test(maxG:Int,s:String,d:String,size:Int,seed:Int,fromGrade:Int=1):List<M>{
@@ -305,18 +305,18 @@ private fun tasksJson(v:List<Task>)=JSONArray().apply{v.forEach{put(JSONObject()
 private data class TutorMessage(val id: Long, val fromUser: Boolean, val text: String, val topic: String = "")
 
 @Composable
-private fun Tutor(grade: Int) {
+private fun Tutor(grade: Int, appLanguage: String) {
     var input by remember { mutableStateOf("") }
     var history by remember {
         mutableStateOf(listOf(TutorMessage(1L, false,
             "Hi! I'm StudyPilot's offline tutor preview. Try: 'what is photosynthesis' or 'what is fotosinthesis'. I currently support a limited set of reviewed topics.")))
     }
     Column(Modifier.fillMaxSize().padding(14.dp)) {
-        Text("StudyPilot Tutor", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
-        Text("Offline preview • typo-tolerant • no API key", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+        AppText("StudyPilot Tutor", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+        AppText("Offline preview • typo-tolerant • no API key", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         Spacer(Modifier.height(8.dp))
         Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
-            Text("This first version answers from a small curated knowledge set. The separately trained Transformer is experimental and is not connected to this chat yet.",
+            AppText("This first version answers from a small curated knowledge set. The separately trained Transformer is experimental and is not connected to this chat yet.",
                 Modifier.padding(12.dp), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(8.dp))
@@ -326,9 +326,9 @@ private fun Tutor(grade: Int) {
                     Card(Modifier.widthIn(max = 320.dp), shape = RoundedCornerShape(18.dp),
                         colors = CardDefaults.cardColors(containerColor = if (item.fromUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
                         Column(Modifier.padding(12.dp)) {
-                            Text(if (item.fromUser) "You" else if (item.topic.isNotBlank()) item.topic else "StudyPilot", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            AppText(if (item.fromUser) "You" else if (item.topic.isNotBlank()) item.topic else "StudyPilot", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                             Spacer(Modifier.height(3.dp))
-                            Text(item.text, fontSize = 14.sp)
+                            AppText(item.text, fontSize = 14.sp)
                         }
                     }
                 }
@@ -336,17 +336,17 @@ private fun Tutor(grade: Int) {
         }
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(value = input, onValueChange = { input = it },
-            modifier = Modifier.fillMaxWidth(), label = { Text("Ask a study question") },
-            placeholder = { Text("e.g. what is fotosinthesis") }, maxLines = 3)
+            modifier = Modifier.fillMaxWidth(), label = { AppText("Ask a study question") },
+            placeholder = { AppText("e.g. what is fotosinthesis") }, maxLines = 3)
         Spacer(Modifier.height(6.dp))
         Button(onClick = {
             val question = input.trim()
             if (question.isNotEmpty()) {
-                val answer = StudyPilotAIEngine.ask(question, classLevel = if (grade in 1..12) grade else null)
+                val answer = StudyPilotAIEngine.ask(question, classLevel = if (grade in 1..12) grade else null, preferredLanguage = appLanguage)
                 history = history + TutorMessage(System.currentTimeMillis(), true, question) +
                     TutorMessage(System.currentTimeMillis() + 1, false, answer.text, answer.topic)
                 input = ""
             }
-        }, modifier = Modifier.fillMaxWidth()) { Text("ASK STUDYPILOT") }
+        }, modifier = Modifier.fillMaxWidth()) { AppText("ASK STUDYPILOT") }
     }
 }
