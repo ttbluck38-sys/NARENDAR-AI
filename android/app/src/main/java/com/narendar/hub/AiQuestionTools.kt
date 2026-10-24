@@ -114,29 +114,26 @@ internal fun AiQuestionTools(
 
             Button(
                 onClick = {
-                    if (!AiConfig.isConfigured()) {
-                        error = "AI is not configured yet. Add the Supabase URL and publishable/anon key in AiConfig.kt."
-                    } else {
-                        loading = true
-                        error = ""
-                        explanation = ""
-                        scope.launch {
-                            try {
-                                explanation = withContext(Dispatchers.IO) {
-                                    requestExplanation(
-                                        question = question,
-                                        options = options,
-                                        correctAnswer = correctAnswer,
-                                        selectedAnswer = selectedAnswer,
-                                        language = language
-                                    )
+                    loading = true
+                    error = ""
+                    explanation = ""
+                    scope.launch {
+                        try {
+                            explanation = withContext(Dispatchers.Default) {
+                                val prompt = when (language) { "Urdu" -> "اردو میں سمجھائیں: $question"; "Sindhi" -> "سنڌي ۾ وضاحت ڪريو: $question"; else -> question }
+                                val offline = StudyPilotAIEngine.ask(prompt, subject = "MCQ explanation")
+                                if (offline.confidence >= 0.40 && !offline.needsClarification) {
+                                    val verdict = when { selectedAnswer == null -> "Correct answer: $correctAnswer. "; selectedAnswer == correctAnswer -> "Your answer is correct. "; else -> "Your answer was $selectedAnswer. The correct answer is $correctAnswer. " }
+                                    verdict + offline.text
+                                } else if (AiConfig.isConfigured()) {
+                                    withContext(Dispatchers.IO) { requestExplanation(question, options, correctAnswer, selectedAnswer, language) }
+                                } else {
+                                    when (language) { "Urdu" -> "یہ سوال موجودہ آف لائن علم میں شامل نہیں۔ درست جواب: $correctAnswer۔ مزید وضاحت کے لیے آن لائن AI سیٹ اپ درکار ہے۔"; "Sindhi" -> "هي سوال موجوده آف لائن ڄاڻ ۾ شامل ناهي. صحيح جواب: $correctAnswer. وڌيڪ وضاحت لاءِ آن لائين AI سيٽ اپ گهرجي."; else -> "This question is outside the current offline knowledge base. Correct answer: $correctAnswer. Configure the online AI endpoint for a deeper explanation." }
                                 }
-                            } catch (e: Exception) {
-                                error = e.message ?: "AI request failed. Check internet and Supabase setup."
-                            } finally {
-                                loading = false
                             }
-                        }
+                        } catch (e: Exception) {
+                            error = e.message ?: "AI explanation failed. Check internet and retry."
+                        } finally { loading = false }
                     }
                 },
                 enabled = !loading,
