@@ -69,7 +69,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var questions by remember{mutableStateOf(emptyList<M>())}
  var generating by remember{mutableStateOf(false)}
  var generationError by remember{mutableStateOf("")}
- var fromGrade by remember(g){mutableIntStateOf(1)}
+ var fromGrade by remember(g){mutableIntStateOf(if(g in 1..9)g else 1)}
   val maxG=if(g<0)9 else g
  LaunchedEffect(start,sub,diff,size,seed,g,fromGrade,studentName,appLanguage){if(start){generating=true;generationError="";try{questions=withContext(Dispatchers.IO){generateAiQuiz(g,fromGrade,sub,diff,size,studentName,appLanguage)}}catch(e:Exception){generationError=e.message ?: "AI question generation failed. Check your Supabase setup and retry."}finally{generating=false}}}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
@@ -248,7 +248,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 
 private fun generateAiQuiz(maxGrade:Int,fromGrade:Int,subject:String,difficulty:String,count:Int,studentName:String,language:String):List<M>{
     if(!AiConfig.isConfigured()) throw IllegalStateException("Connect Supabase first: add SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY in GitHub Actions secrets, then deploy the StudyPilot Edge Functions.")
-    val grade=if(maxGrade in 1..9) maxGrade else fromGrade.coerceIn(1,9)
+    val grade=if(maxGrade in 1..9) fromGrade.coerceIn(1,maxGrade) else fromGrade.coerceIn(1,9)
     val all=ArrayList<M>()
     val seen=HashSet<String>()
     var remaining=count
@@ -291,72 +291,6 @@ private fun generateAiQuiz(maxGrade:Int,fromGrade:Int,subject:String,difficulty:
     return all
 }
 
-private fun test(maxG:Int,s:String,d:String,size:Int,seed:Int,fromGrade:Int=1):List<M>{
- val ds=if(d=="Mixed")listOf("Easy","Medium","Hard")else listOf(d)
- val all=ArrayList<M>()
- if(size>=2500){
-  val grades=if(maxG<1) (1..9).toList() else (fromGrade.coerceIn(1,maxG)..maxG.coerceAtMost(9)).toList()
-  val bucketCount=(grades.size*ds.size).coerceAtLeast(1)
-  val baseCount=2500/bucketCount
-  val remainder=2500%bucketCount
-  var bucket=0
-  for(grade in grades)for(x in ds){
-   val count=baseCount+(if(bucket<remainder)1 else 0)
-   all.addAll(bank(grade,s,x,count,kotlin.math.abs(seed*97+x.hashCode())%2000))
-   bucket++
-  }
- }else{
-  val poolSize=minOf(2500,maxOf(40,size*2))
-  for(g in (if(maxG<1) 1..9 else fromGrade.coerceIn(1,maxG)..maxG.coerceAtMost(9)))for(x in ds)all.addAll(bank(g,s,x,poolSize,kotlin.math.abs(seed*97+x.hashCode())%2000))
- }
- return all.shuffled(kotlin.random.Random(seed*7919+s.hashCode())).take(size).mapIndexed{index,q->shuffleOptions(q,seed*31+index+s.hashCode())}
-}
-private fun bank(g:Int,s:String,d:String,n:Int,variantSeed:Int=0):List<M> = emptyList()
-private data class Fact(val term:String,val meaning:String)
-private fun facts(s:String):List<Fact> = when(s){
- "Science"->listOf(Fact("evaporation","a liquid changes into gas"),Fact("photosynthesis","plants use light to make food"),Fact("gravity","an attraction between objects with mass"),Fact("condensation","gas changes into liquid"),Fact("friction","a force that resists sliding motion"),Fact("ecosystem","living things interact with each other and their surroundings"),Fact("reflection","light bounces from a surface"),Fact("magnetism","a force associated with magnets and magnetic fields"),Fact("habitat","the natural place where an organism lives"),Fact("insulator","a material that slows heat or electric flow"),Fact("producer","an organism that makes its own food"),Fact("renewable resource","a resource replenished naturally over time"))
- "English"->listOf(Fact("quickly","an adverb meaning at a fast speed"),Fact("beautiful","an adjective meaning pleasing to the senses"),Fact("because","a conjunction that gives a reason"),Fact("carefully","an adverb meaning with care"),Fact("although","a conjunction that introduces contrast"),Fact("honest","an adjective meaning truthful"),Fact("between","a preposition for a position in the middle of two"),Fact("however","a word that introduces a contrast"),Fact("noun","a word naming a person, place, thing, or idea"),Fact("verb","a word expressing an action or state"),Fact("adjective","a word that describes a noun"),Fact("synonym","a word with a similar meaning"),Fact("antonym","a word with an opposite meaning"),Fact("pronoun","a word used instead of a noun"))
- "Computer Science"->listOf(Fact("CPU","the main processor that executes instructions"),Fact("RAM","temporary working memory used while programs run"),Fact("browser","software used to open and view websites"),Fact("algorithm","a sequence of steps for solving a problem"),Fact("firewall","a system that filters network traffic"),Fact("compiler","software that translates source code"),Fact("keyboard","an input device used to type"),Fact("router","a device that forwards data between networks"),Fact("database","an organized collection of data"),Fact("operating system","software that manages hardware and applications"),Fact("binary","a number system using zero and one"),Fact("backup","a separate copy kept for recovery"),Fact("phishing","a trick used to steal information by pretending to be trusted"),Fact("variable","a named place to store a value in a program"))
- "SST"->listOf(Fact("map","a representation of places or areas"),Fact("constitution","the fundamental set of laws for a state"),Fact("river","a natural stream of flowing water"),Fact("trade","the exchange of goods or services"),Fact("community","a group of people living or working together"),Fact("citizen","a legally recognized member of a country"),Fact("climate","the long-term pattern of weather in a region"),Fact("culture","shared customs, beliefs, arts, and ways of life"),Fact("compass","an instrument that helps show direction"),Fact("democracy","a system in which people participate in choosing leaders"),Fact("continent","one of Earth's major landmasses"),Fact("economy","the system of producing, sharing, and using goods and services"))
- "Urdu"->listOf(Fact("اسم","کسی شخص، جگہ، چیز یا خیال کا نام"),Fact("فعل","کام یا حالت ظاہر کرنے والا لفظ"),Fact("صفت","اسم کی خوبی یا حالت بتانے والا لفظ"),Fact("جملہ","الفاظ کا ایسا مجموعہ جو مکمل بات بتائے"),Fact("محاورہ","خاص معنی میں استعمال ہونے والا رائج فقرہ"),Fact("کہانی","واقعات پر مبنی بیان"),Fact("شاعر","شاعری کرنے والا شخص"),Fact("مضمون","کسی موضوع پر نثری تحریر"),Fact("واحد","ایک کے لیے استعمال ہونے والی صورت"),Fact("جمع","ایک سے زیادہ کے لیے استعمال ہونے والی صورت"),Fact("مترادف","ملتے جلتے معنی والا لفظ"),Fact("متضاد","الٹ معنی والا لفظ"))
- "Physics"->listOf(Fact("velocity","speed measured with a direction"),Fact("force","a push or pull that can change motion"),Fact("energy","the ability to do work or cause change"),Fact("frequency","the number of cycles per second"),Fact("voltage","electric potential difference between two points"),Fact("current","the rate at which electric charge flows"),Fact("mass","a measure of the amount of matter"),Fact("pressure","force acting per unit area"),Fact("inertia","the tendency to resist a change in motion"),Fact("wavelength","distance between matching points on consecutive waves"),Fact("conductor","a material that allows charge to flow easily"),Fact("acceleration","the rate at which velocity changes"))
- "Chemistry"->listOf(Fact("atom","the smallest unit of an element that keeps its identity"),Fact("molecule","two or more atoms chemically bonded together"),Fact("element","a pure substance made of one type of atom"),Fact("mixture","substances combined physically rather than chemically"),Fact("reaction","a process that changes substances into other substances"),Fact("solution","a uniform mixture of a solute and solvent"),Fact("electron","a negatively charged subatomic particle"),Fact("acid","a substance that donates hydrogen ions in water-based chemistry"),Fact("base","a substance that can accept hydrogen ions or produce hydroxide ions"),Fact("isotope","atoms of one element with different neutron counts"),Fact("catalyst","a substance that speeds a reaction without being used up overall"),Fact("pH","a scale used to describe acidity or basicity"))
- "Biology"->listOf(Fact("cell","the basic structural and functional unit of life"),Fact("root","a plant part that anchors it and often absorbs water"),Fact("organ","a body structure made of tissues that performs a function"),Fact("gene","a DNA segment carrying hereditary information"),Fact("ecosystem","living organisms interacting with their environment"),Fact("chlorophyll","the green pigment that absorbs light for photosynthesis"),Fact("tissue","a group of similar cells working together"),Fact("habitat","the natural home of an organism"),Fact("pollination","transfer of pollen to the female part of a flower"),Fact("respiration","cellular process that releases usable energy from food"),Fact("producer","an organism that makes its own food"),Fact("decomposer","an organism that breaks down dead matter"))
- else->listOf(Fact("concept","an idea used to explain a subject"),Fact("example","a specific case that illustrates an idea"),Fact("evidence","information used to support a claim"),Fact("pattern","a repeated or recognizable arrangement"))
-}
-private fun make(g:Int,s:String,d:String,i:Int):M{
- val n=i+1
- val diffCode=when(d){"Easy"->1;"Medium"->2;else->3}
- val b=i+g*37+diffCode*101
- val topics=when(s){"Mathematics"->listOf("Arithmetic","Fractions","Algebra","Geometry","Patterns");"Science"->listOf("Matter","Life","Energy","Earth","Forces");"English"->listOf("Grammar","Vocabulary","Tenses","Reading","Writing");"Computer Science"->listOf("Hardware","Software","Programming","Networks","Cyber Safety");"SST"->listOf("History","Geography","Civics","Economics","Society");"Urdu"->listOf("قواعد","الفاظ","مطالعہ","ادب","تحریر");"Physics"->listOf("Motion","Energy","Waves","Electricity","Forces");"Chemistry"->listOf("Atoms","Matter","Reactions","Solutions","Elements");else->listOf("Cells","Plants","Animals","Genetics","Ecology")}
- val topic=topics[i%topics.size]
- if(s=="Mathematics")return math(g,d,topic,n,b)
- val fs=facts(s)
- val idx=(i+g*3+diffCode*5)%fs.size
- val f=fs[idx]
- val wrong=listOf(fs[(idx+1)%fs.size].term,fs[(idx+2)%fs.size].term,fs[(idx+3)%fs.size].term)
- val slot=(i+g+diffCode)%4
- val opts=MutableList(4){""};opts[slot]=f.term
- var wi=0;for(k in 0..3)if(k!=slot){opts[k]=wrong[wi];wi++}
- val stems=listOf("Which term matches this definition: ${f.meaning}?","Class $g $s • $topic: choose the term described by “${f.meaning}”.","A learner writes clue $n: “${f.meaning}”. Which answer fits?","Select the best concept for this meaning: ${f.meaning}.","During a $topic activity, the teacher says “${f.meaning}”. What is being described?","Which $s term is correctly matched to this description: ${f.meaning}?","Review item $n: identify the term for “${f.meaning}”.","In difficulty $d practice, which term means “${f.meaning}”?")
- val question="${stems[i%stems.size]}  (Item $n)"
- return M(questionId(g,s,d,n),g,s,d,topic,question,opts,slot,"Correct answer: ${f.term}. Meaning: ${f.meaning}. Topic: $topic. Review the definition and compare it with the other choices.")
-}
-private fun math(g:Int,d:String,t:String,n:Int,b:Int):M{
- val mode=n%10
- val level=when(d){"Easy"->0;"Medium"->1;else->2}
- val base=b%97+g*(level+1)
- val a=base+(if(level==0)0 else n%31)
- val x=(b*(level+2)+n*3)%((if(level==0)20 else if(level==1)60 else 120))+2
- val ans=when(mode){0->a+x;1->a*x;2->abs(a-x);3->(a+x)%10;4->a+x+5;5->a*x+3;6->abs(a-x)+2;7->a*x%17;8->(a+x)*2;else->a*x+a}
- val q=when(mode){0->"Class $g Mathematics: calculate $a + $x.";1->"Class $g Mathematics: calculate $a × $x.";2->"Class $g Mathematics: find |$a − $x|.";3->"Class $g Mathematics: find the remainder when ${a+x} is divided by 10.";4->"$a increases by ${x+5}. What is the new value?";5->"Multiply $a by $x, then add 3.";6->"Find |$a − $x| + 2.";7->"Find the remainder when ${a*x} is divided by 17.";8->"Double the sum of $a and $x.";else->"Multiply $a by $x, then add $a."}
- val choices=linkedSetOf(ans,ans+1,if(ans>1)ans-1 else ans+2,ans+3,ans-2,ans+5).filter{it>=0}.take(4).toList()
- val opts=if(choices.size==4)choices else (choices+List(4-choices.size){ans+it+7}).take(4)
- return M(questionId(g,"Mathematics",d,n),g,"Mathematics",d,t,"$q (Practice item $n)",opts.map{it.toString()},opts.indexOf(ans).coerceAtLeast(0),"Work through the operation step by step. Correct answer: $ans.")
-}
-
-private fun questionId(g:Int,s:String,d:String,n:Int):Int{val subjectCode=(subs.indexOfFirst{it.first==s}+1).coerceAtLeast(1);val diffCode=when(d){"Easy"->1;"Medium"->2;else->3};return g*1_000_000+subjectCode*100_000+diffCode*10_000+n}
-private fun shuffleOptions(q:M,seed:Int):M{val indexed=q.opts.mapIndexed{index,value->index to value}.shuffled(kotlin.random.Random(seed));return q.copy(opts=indexed.map{it.second},ans=indexed.indexOfFirst{it.first==q.ans})}
 private fun loadNotes(p:android.content.SharedPreferences):List<Note>{return try{val a=JSONArray(p.getString("notes","[]"));List(a.length()){val o=a.getJSONObject(it);Note(o.getLong("id"),o.getString("title"),o.getString("body"))}}catch(_:Exception){emptyList()}}
 private fun loadTasks(p:android.content.SharedPreferences):List<Task>{return try{val a=JSONArray(p.getString("tasks","[]"));List(a.length()){val o=a.getJSONObject(it);Task(o.getLong("id"),o.getString("text"),o.getBoolean("done"))}}catch(_:Exception){emptyList()}}
 private fun notesJson(v:List<Note>)=JSONArray().apply{v.forEach{put(JSONObject().apply{put("id",it.id);put("title",it.title);put("body",it.body)})}}.toString()
