@@ -35,20 +35,20 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 
 @Composable fun FixedHub(context:Context){
  val p=remember{context.getSharedPreferences("narendar_fixed",Context.MODE_PRIVATE)}
- var appLanguage by remember{mutableStateOf(p.getString("app_language","English") ?: "English")};var grade by remember{mutableIntStateOf(p.getInt("grade",-1))};var page by remember{mutableStateOf(if(grade<0)"pick" else "home")};var dark by remember{mutableStateOf(p.getBoolean("dark",false))}
+ var appLanguage by remember{mutableStateOf(p.getString("app_language","English") ?: "English")};var studentName by remember{mutableStateOf(p.getString("student_name","") ?: "")};var grade by remember{mutableIntStateOf(p.getInt("grade",-1))};var page by remember{mutableStateOf(if(grade<0)"pick" else "home")};var dark by remember{mutableStateOf(p.getBoolean("dark",false))}
  var xp by remember{mutableIntStateOf(p.getInt("xp",0))};var correct by remember{mutableIntStateOf(p.getInt("correct",0))};var tried by remember{mutableIntStateOf(p.getInt("tried",0))};var notes by remember{mutableStateOf(loadNotes(p))};var tasks by remember{mutableStateOf(loadTasks(p))};var toast by remember{mutableStateOf("")}
  fun record(ok:Boolean){tried++;if(ok)correct++;xp+=if(ok)20 else 5;p.edit().putInt("xp",xp).putInt("correct",correct).putInt("tried",tried).apply()}
  fun saveNotes(v:List<Note>){notes=v;p.edit().putString("notes",notesJson(v)).apply()}
  fun saveTasks(v:List<Task>){tasks=v;p.edit().putString("tasks",tasksJson(v)).apply()}
  LaunchedEffect(toast){if(toast.isNotEmpty()){delay(1500);toast=""}}
  androidx.compose.runtime.CompositionLocalProvider(LocalAppLanguage provides appLanguage) { MaterialTheme(colorScheme=if(dark)darkColorScheme(primary=Color(0xFF9AB8FF),secondary=Color(0xFF70E0BE),tertiary=Color(0xFFFF9DC7))else lightColorScheme(primary=palette[0],secondary=palette[2],tertiary=palette[4],surface=Color(0xFFF7F8FC))){
-  if(page=="pick"){Pick(grade,appLanguage,{appLanguage=it;p.edit().putString("app_language",it).apply()}){grade=it;p.edit().putInt("grade",it).apply();page="home"};return@MaterialTheme}
-  Scaffold(topBar={CenterAlignedTopAppBar(title={AppText("StudyPilot AI",fontWeight=FontWeight.Black)})},bottomBar={NavigationBar{listOf("home" to "⌂","learn" to "▣","quiz" to "✓","tutor" to "✦","library" to "▤","profile" to "●").forEach{(k,ic)->NavigationBarItem(page==k,{page=k},icon={AppText(ic)},label={AppText(k.replaceFirstChar{it.uppercase()})})}}}){pad->Box(Modifier.fillMaxSize().padding(pad)){AnimatedContent(page,label="page"){s->when(s){"home"->Home(grade,xp,correct,tried,tasks.count{!it.done},notes.size){page=it};"learn"->Learn(grade){page="quiz"};"quiz"->Quiz(grade,appLanguage,::record){toast=it};"library"->Library(grade,notes,tasks,::saveNotes,::saveTasks);"tutor"->Tutor(grade,appLanguage);"profile"->Profile(grade,xp,correct,tried,dark,{dark=it;p.edit().putBoolean("dark",it).apply()},appLanguage,{appLanguage=it;p.edit().putString("app_language",it).apply()}){grade=-1;p.edit().putInt("grade",-1).apply();page="pick"}}};AnimatedVisibility(toast.isNotEmpty(),enter=slideInVertically{it}+fadeIn(),exit=fadeOut(),modifier=Modifier.align(Alignment.BottomCenter).padding(8.dp)){Surface(shape=RoundedCornerShape(18.dp),tonalElevation=8.dp){AppText(toast,Modifier.padding(14.dp),fontWeight=FontWeight.Bold)}}}}
+  if(page=="pick"){Pick(grade,appLanguage,{appLanguage=it;p.edit().putString("app_language",it).apply()},studentName,{studentName=it;p.edit().putString("student_name",it).apply()}){grade=it;p.edit().putInt("grade",it).apply();page="home"};return@MaterialTheme}
+  Scaffold(topBar={CenterAlignedTopAppBar(title={AppText("StudyPilot AI",fontWeight=FontWeight.Black)})},bottomBar={NavigationBar{listOf("home" to "⌂","learn" to "▣","quiz" to "✓","tutor" to "✦","library" to "▤","profile" to "●").forEach{(k,ic)->NavigationBarItem(page==k,{page=k},icon={AppText(ic)},label={AppText(k.replaceFirstChar{it.uppercase()})})}}}){pad->Box(Modifier.fillMaxSize().padding(pad)){AnimatedContent(page,label="page"){s->when(s){"home"->Home(grade,xp,correct,tried,tasks.count{!it.done},notes.size){page=it};"learn"->Learn(grade){page="quiz"};"quiz"->Quiz(grade,appLanguage,studentName,::record){toast=it};"library"->Library(grade,notes,tasks,::saveNotes,::saveTasks);"tutor"->Tutor(grade,appLanguage);"profile"->Profile(grade,xp,correct,tried,dark,{dark=it;p.edit().putBoolean("dark",it).apply()},appLanguage,{appLanguage=it;p.edit().putString("app_language",it).apply()}){grade=-1;p.edit().putInt("grade",-1).apply();page="pick"}}};AnimatedVisibility(toast.isNotEmpty(),enter=slideInVertically{it}+fadeIn(),exit=fadeOut(),modifier=Modifier.align(Alignment.BottomCenter).padding(8.dp)){Surface(shape=RoundedCornerShape(18.dp),tonalElevation=8.dp){AppText(toast,Modifier.padding(14.dp),fontWeight=FontWeight.Bold)}}}}
  }
 }
 
  }
-@Composable private fun Pick(g:Int,language:String,setLanguage:(String)->Unit,choose:(Int)->Unit){val pulse=rememberInfiniteTransition(label="p").animateFloat(1f,1.06f,infiniteRepeatable(tween(1100),RepeatMode.Reverse),label="p").value;Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF111827),Color(0xFF312E81),Color(0xFF0F766E)))).verticalScroll(rememberScrollState())){Column(Modifier.padding(22.dp),horizontalAlignment=Alignment.CenterHorizontally){Spacer(Modifier.height(25.dp));Surface(shape=CircleShape,color=Color.White.copy(.13f),modifier=Modifier.size(100.dp).scale(pulse)){Box(contentAlignment=Alignment.Center){AppText("N",color=Color.White,fontSize=48.sp,fontWeight=FontWeight.Black)}};AppText("STUDYPILOT AI",color=Color.White,fontSize=29.sp,fontWeight=FontWeight.Black);AppText("Learn • Practice • Master",color=Color.White.copy(.7f));Spacer(Modifier.height(22.dp));AppText("Choose class",color=Color.White,fontSize=21.sp,fontWeight=FontWeight.Black);LanguagePicker(language,setLanguage);AppText("Class 8 includes Class 1–8 learning.",color=Color.White.copy(.65f));Spacer(Modifier.height(10.dp));listOf(-1 to "🌎 All Classes",1 to "🎒 Class 1",2 to "🎒 Class 2",3 to "🎒 Class 3",4 to "🎒 Class 4",5 to "🎒 Class 5",6 to "🎒 Class 6",7 to "🎒 Class 7",8 to "🚀 Class 8",9 to "🏆 Class 9+").forEach{(v,t)->Card(onClick={choose(v)},modifier=Modifier.fillMaxWidth().padding(4.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=Color.White.copy(.11f))){Row(Modifier.padding(16.dp)){AppText(t,color=Color.White,fontWeight=FontWeight.Bold);Spacer(Modifier.weight(1f));AppText(if(g==v)"✓" else "›",color=Color.White,fontSize=22.sp)}}};AppText("Generated practice set • curriculum review pending",color=Color.White.copy(.55f),fontSize=12.sp,modifier=Modifier.padding(top=10.dp))}}}
+@Composable private fun Pick(g:Int,language:String,setLanguage:(String)->Unit,studentName:String,setStudentName:(String)->Unit,choose:(Int)->Unit){val pulse=rememberInfiniteTransition(label="p").animateFloat(1f,1.06f,infiniteRepeatable(tween(1100),RepeatMode.Reverse),label="p").value;Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF111827),Color(0xFF312E81),Color(0xFF0F766E)))).verticalScroll(rememberScrollState())){Column(Modifier.padding(22.dp),horizontalAlignment=Alignment.CenterHorizontally){Spacer(Modifier.height(25.dp));Surface(shape=CircleShape,color=Color.White.copy(.13f),modifier=Modifier.size(100.dp).scale(pulse)){Box(contentAlignment=Alignment.Center){AppText("N",color=Color.White,fontSize=48.sp,fontWeight=FontWeight.Black)}};AppText("STUDYPILOT AI",color=Color.White,fontSize=29.sp,fontWeight=FontWeight.Black);AppText("Learn • Practice • Master",color=Color.White.copy(.7f));Spacer(Modifier.height(22.dp));AppText("Welcome to StudyPilot AI",color=Color.White,fontSize=21.sp,fontWeight=FontWeight.Black);OutlinedTextField(value=studentName,onValueChange=setStudentName,label={AppText("Student name")},singleLine=true,modifier=Modifier.fillMaxWidth());LanguagePicker(language,setLanguage);AppText("Class 8 includes Class 1–8 learning.",color=Color.White.copy(.65f));Spacer(Modifier.height(10.dp));listOf(-1 to "🌎 All Classes",1 to "🎒 Class 1",2 to "🎒 Class 2",3 to "🎒 Class 3",4 to "🎒 Class 4",5 to "🎒 Class 5",6 to "🎒 Class 6",7 to "🎒 Class 7",8 to "🚀 Class 8",9 to "🏆 Class 9+").forEach{(v,t)->Card(onClick={choose(v)},modifier=Modifier.fillMaxWidth().padding(4.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=Color.White.copy(.11f))){Row(Modifier.padding(16.dp)){AppText(t,color=Color.White,fontWeight=FontWeight.Bold);Spacer(Modifier.weight(1f));AppText(if(g==v)"✓" else "›",color=Color.White,fontSize=22.sp)}}};AppText("Generated practice set • curriculum review pending",color=Color.White.copy(.55f),fontSize=12.sp,modifier=Modifier.padding(top=10.dp))}}}
 
 @Composable private fun Home(g:Int,xp:Int,ok:Int,tried:Int,tasks:Int,notes:Int,nav:(String)->Unit){val acc=if(tried==0)0 else ok*100/tried;val pulse=rememberInfiniteTransition(label="hero").animateFloat(.97f,1f,infiniteRepeatable(tween(1400),RepeatMode.Reverse),label="hero").value;LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){item{AppText("Welcome back 👋",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);AppText(if(g<0)"All Classes" else "Class $g",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)};item{Card(Modifier.fillMaxWidth().scale(pulse),shape=RoundedCornerShape(30.dp)){Box(Modifier.background(Brush.linearGradient(listOf(palette[(xp/100)%5],palette[(xp/100+2)%5])))){Column(Modifier.padding(22.dp)){AppText("LEVEL ${xp/500+1} • $xp XP",color=Color.White.copy(.8f),fontWeight=FontWeight.Bold);AppText("Your learning journey",color=Color.White,fontSize=27.sp,fontWeight=FontWeight.Black);Spacer(Modifier.height(12.dp));LinearProgressIndicator({(xp%500)/500f},Modifier.fillMaxWidth().height(9.dp),color=Color.White,trackColor=Color.White.copy(.2f));Spacer(Modifier.height(9.dp));AppText("🎯 $acc% accuracy   📚 $tried attempts",color=Color.White,fontWeight=FontWeight.Bold)}}}};item{AppText("Explore",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)};item{Action("🎮","Quiz Arena","Practice MCQs • Easy / Medium / Hard",palette[0]){nav("quiz")}};item{Action("📚","Study Library","Subjects + explanations",palette[1]){nav("learn")}};item{Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Stat("Questions",tried.toString(),palette[2],Modifier.weight(1f));Stat("Notes",notes.toString(),palette[3],Modifier.weight(1f));Stat("Tasks",tasks.toString(),palette[4],Modifier.weight(1f))}};item{Action("🃏","Revision Hub","Notes + planner",palette[2]){nav("library")}};item{Action("🏆","Stats + Settings","XP + theme",palette[3]){nav("profile")}}}}
 @Composable private fun Action(ic:String,title:String,sub:String,c:Color,go:()->Unit){Card(Modifier.fillMaxWidth().clickable{go()},shape=RoundedCornerShape(22.dp)){Row(Modifier.padding(17.dp),verticalAlignment=Alignment.CenterVertically){Surface(shape=CircleShape,color=c.copy(.13f),modifier=Modifier.size(50.dp)){Box(contentAlignment=Alignment.Center){AppText(ic,fontSize=25.sp)}};Spacer(Modifier.width(13.dp));Column(Modifier.weight(1f)){AppText(title,fontWeight=FontWeight.Black);AppText(sub,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)};AppText("›",fontSize=28.sp,color=c)}}}
@@ -56,7 +56,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 
 @Composable private fun Learn(g:Int,start:()->Unit){var sub by remember{mutableStateOf("Mathematics")};val list=if(g<0||g>=9)subs else subs.take(6);Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){AppText("Study Library",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);AppText("Study → revise → practice → test",color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(12.dp));list.forEachIndexed{ix,(name,icon)->Card(onClick={sub=name},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=if(sub==name)palette[ix%5].copy(.15f)else MaterialTheme.colorScheme.surfaceVariant)){Row(Modifier.padding(15.dp),verticalAlignment=Alignment.CenterVertically){AppText(icon,fontSize=23.sp);Spacer(Modifier.width(12.dp));AppText(name,Modifier.weight(1f),fontWeight=FontWeight.Black);AppText(if(sub==name)"✓" else "›",color=palette[ix%5])}}};Spacer(Modifier.height(12.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(25.dp)){Column(Modifier.padding(20.dp)){AppText("📖 $sub",fontSize=23.sp,fontWeight=FontWeight.Black);AppText("Class ${if(g<0)"1–9+" else "1–$g"} • Generated practice set • curriculum review pending per difficulty",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(8.dp));AppText("MCQ Study Library",fontWeight=FontWeight.Bold);AppText("Every test question has a unique ID and an explanation.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(12.dp));Button(start,modifier=Modifier.fillMaxWidth()){AppText("START PRACTICE")}}}}}
 
-@Composable private fun Quiz(g:Int,appLanguage:String,record:(Boolean)->Unit,toast:(String)->Unit){
+@Composable private fun Quiz(g:Int,appLanguage:String,studentName:String,record:(Boolean)->Unit,toast:(String)->Unit){
  var sub by remember{mutableStateOf("Mathematics")}
  var diff by remember{mutableStateOf("Mixed")}
  var size by remember{mutableIntStateOf(10)}
@@ -66,26 +66,29 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var score by remember{mutableIntStateOf(0)}
  var seed by remember{mutableIntStateOf(0)}
   var revealUses by remember{mutableIntStateOf(0)}
+ var questions by remember{mutableStateOf(emptyList<M>())}
+ var generating by remember{mutableStateOf(false)}
+ var generationError by remember{mutableStateOf("")}
  var fromGrade by remember(g){mutableIntStateOf(1)}
   val maxG=if(g<0)9 else g
- val qs=remember(sub,diff,size,seed,g,fromGrade){test(g,sub,diff,size,seed,fromGrade)}
+ LaunchedEffect(start,sub,diff,size,seed,g,fromGrade,studentName,appLanguage){if(start){generating=true;generationError="";try{questions=withContext(Dispatchers.IO){generateAiQuiz(g,fromGrade,sub,diff,size,studentName,appLanguage)}}catch(e:Exception){generationError=e.message ?: "AI question generation failed. Check your Supabase setup and retry."}finally{generating=false}}}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
   AppText("Quiz Arena",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
    if(g>0){AppText("Question class range",fontWeight=FontWeight.Black);Row(Modifier.horizontalScroll(rememberScrollState())){(1..g).forEach{from->FilterChip(fromGrade==from,{fromGrade=from},label={AppText("Class $from–$g")},modifier=Modifier.padding(end=4.dp))}}}
-  AppText("Practice questions with explanations and read-aloud support. Choose 2,500 for a long mega test.",color=MaterialTheme.colorScheme.onSurfaceVariant)
+  AppText("Fresh AI-generated questions tailored to the student profile, class, subject and difficulty.",color=MaterialTheme.colorScheme.onSurfaceVariant)
   Spacer(Modifier.height(12.dp));AppText("Subject",fontWeight=FontWeight.Black)
   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){subs.forEach{(n,_)->FilterChip(sub==n,{sub=n},label={AppText(n)})}}
   Spacer(Modifier.height(10.dp));Row{listOf("Mixed","Easy","Medium","Hard").forEach{FilterChip(diff==it,{diff=it},label={AppText(it)},modifier=Modifier.padding(end=4.dp))}}
-  Spacer(Modifier.height(10.dp));Row(Modifier.horizontalScroll(rememberScrollState())){listOf(10,20,50,100,2500).forEach{FilterChip(size==it,{size=it},label={AppText(if(it==2500)"2,500 Mega Test" else "$it")},modifier=Modifier.padding(end=4.dp))}}
+  Spacer(Modifier.height(10.dp));Row(Modifier.horizontalScroll(rememberScrollState())){listOf(10,20,30,50,100).forEach{FilterChip(size==it,{size=it},label={AppText("$it")},modifier=Modifier.padding(end=4.dp))}}
   Spacer(Modifier.height(16.dp));BigCard(palette[0],"🎮 READY","Practice MCQs • AI explanation • speaker support"){start=true}
  };return}
- if(at>=qs.size){Column(Modifier.fillMaxSize().padding(20.dp),horizontalAlignment=Alignment.CenterHorizontally){
+ if(generating){Column(Modifier.fillMaxSize().padding(24.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){CircularProgressIndicator();Spacer(Modifier.height(12.dp));AppText("StudyPilot AI is creating questions for ${studentName.ifBlank{"you"}}…",fontWeight=FontWeight.Bold);AppText("Class $g • $sub • $diff",color=MaterialTheme.colorScheme.onSurfaceVariant)}}else if(generationError.isNotBlank()){Column(Modifier.fillMaxSize().padding(20.dp),verticalArrangement=Arrangement.Center){AppText("Could not generate your quiz",fontWeight=FontWeight.Black);AppText(generationError,color=MaterialTheme.colorScheme.error);Button({start=false;generationError=""}){AppText("BACK TO QUIZ SETTINGS")};Button({seed++;generationError="";start=true}){AppText("RETRY AI GENERATION")}};return}else if(questions.isNotEmpty()&&at>=questions.size){Column(Modifier.fillMaxSize().padding(20.dp),horizontalAlignment=Alignment.CenterHorizontally){
   Spacer(Modifier.height(40.dp));AppText("🏆",fontSize=70.sp);AppText("Test Complete",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)
   AppText("$score / $size",fontSize=34.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
   AppText("Accuracy ${score*100/size}%",color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.height(18.dp))
   Button({seed++;at=0;pick=-1;score=0;revealUses=0}){AppText("NEW UNIQUE TEST")}
  };return}
- val q=qs[at]
+ if(questions.isEmpty()){return};val q=questions[at]
  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
   Row{AppText("${at+1}/$size",fontWeight=FontWeight.Black);Spacer(Modifier.weight(1f));AppText("+20 XP",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)}
   LinearProgressIndicator({(at+if(pick>=0)1 else 0).toFloat()/size},Modifier.fillMaxWidth().height(8.dp));Spacer(Modifier.height(10.dp))
@@ -101,7 +104,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
    Card(Modifier.fillMaxWidth().padding(top=8.dp),shape=RoundedCornerShape(19.dp)){Column(Modifier.padding(15.dp)){
     AppText(if(pick==q.ans)"✓ Correct" else "✕ Review",fontWeight=FontWeight.Black)
     AppText(if(pick==q.ans) "Correct — use StudyPilot AI to learn why." else "Review with StudyPilot AI to understand the mistake.",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-    AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=q.opts[pick],appLanguage=appLanguage,megaTest=size==2500,revealUses=revealUses,onReveal={if(size==2500&&revealUses<10)revealUses++})
+    AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=q.opts[pick],appLanguage=appLanguage,megaTest=false,revealUses=revealUses,onReveal={if(size==2500&&revealUses<10)revealUses++})
     Spacer(Modifier.height(8.dp));Button({at++;pick=-1},modifier=Modifier.fillMaxWidth()){AppText(if(at==size-1)"FINISH" else "NEXT QUESTION →")}
    }}
   } else {
@@ -155,13 +158,13 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var query by remember{mutableStateOf("")}
  var savedOnly by remember{mutableStateOf(false)}
  var bookmarks by remember{mutableStateOf(prefs.getStringSet("bookmarks",emptySet())?.toSet()?:emptySet())}
- val all=remember(g,subject,difficulty){bank(g,subject,difficulty,2500)}
+ val all=remember(g,subject,difficulty){emptyList<M>()}
  val filtered=remember(all,query,savedOnly,bookmarks){all.filter{q->(query.isBlank()||q.q.contains(query,true)||q.opts.any{it.contains(query,true)}||q.exp.contains(query,true))&&(!savedOnly||q.id.toString() in bookmarks)}}
  val pageCount=maxOf(1,(filtered.size+24)/25)
  val questions=remember(filtered,page){filtered.drop(page*25).take(25)}
  Column(modifier.fillMaxSize()){
   AppText("MCQ Question Bank",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
-  AppText("2,500 generated items per class × subject × difficulty. Curriculum review is still needed.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+  AppText("AI quiz generation is available in Quiz Arena. This local archive only contains previously saved items.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
   Spacer(Modifier.height(7.dp))
   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(5.dp)){(1..9).forEach{n->FilterChip(g==n,{g=n;page=0},label={AppText(if(n==9)"9+" else "$n")})}}
   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(5.dp)){subs.forEach{(name,_)->FilterChip(subject==name,{subject=name;page=0},label={AppText(name)})}}
@@ -242,6 +245,52 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 @Composable private fun Profile(g:Int,xp:Int,ok:Int,tried:Int,dark:Boolean,setDark:(Boolean)->Unit,language:String,setLanguage:(String)->Unit,change:()->Unit){val acc=if(tried==0)0 else ok*100/tried;Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){AppText("Profile & Stats",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);LanguagePicker(language,setLanguage);BigCard(palette[1],"LEVEL ${xp/500+1}","$xp XP • $acc% accuracy",{});Spacer(Modifier.height(10.dp));Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Stat("Attempted",tried.toString(),palette[0],Modifier.weight(1f));Stat("Correct",ok.toString(),palette[2],Modifier.weight(1f))};Spacer(Modifier.height(10.dp));Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically){AppText("Dark theme",modifier=Modifier.weight(1f),fontWeight=FontWeight.Bold);Switch(dark,setDark)}};Spacer(Modifier.height(8.dp));OutlinedButton(change,modifier=Modifier.fillMaxWidth()){AppText("CHANGE CLASS")}}
 }
 
+
+private fun generateAiQuiz(maxGrade:Int,fromGrade:Int,subject:String,difficulty:String,count:Int,studentName:String,language:String):List<M>{
+    if(!AiConfig.isConfigured()) throw IllegalStateException("Connect Supabase first: add SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY in GitHub Actions secrets, then deploy the StudyPilot Edge Functions.")
+    val grade=if(maxGrade in 1..9) maxGrade else fromGrade.coerceIn(1,9)
+    val all=ArrayList<M>()
+    val seen=HashSet<String>()
+    var remaining=count
+    while(remaining>0){
+        val batch=minOf(10,remaining)
+        val body=JSONObject().apply{
+            put("grade",grade);put("subject",subject);put("difficulty",difficulty);put("language",language)
+            put("count",batch);put("studentName",studentName.take(80))
+            put("learningLevel","Adapt to class $grade and the student's demonstrated understanding")
+            put("excludeQuestions",JSONArray(all.map{it.q}))
+        }
+        val connection=(java.net.URL(AiConfig.SUPABASE_URL.trimEnd()+"/functions/v1/study-generate-mcqs").openConnection() as java.net.HttpURLConnection).apply{
+            requestMethod="POST";connectTimeout=20000;readTimeout=65000;doOutput=true
+            setRequestProperty("Content-Type","application/json; charset=utf-8")
+            setRequestProperty("apikey",AiConfig.SUPABASE_PUBLISHABLE_KEY)
+            setRequestProperty("Authorization","Bearer "+AiConfig.SUPABASE_PUBLISHABLE_KEY)
+        }
+        try{
+            connection.outputStream.use{it.write(body.toString().toByteArray(Charsets.UTF_8))}
+            val code=connection.responseCode
+            val stream=if(code in 200..299)connection.inputStream else connection.errorStream
+            val raw=stream?.bufferedReader(Charsets.UTF_8)?.use{it.readText()}.orEmpty()
+            val json=JSONObject(raw.ifBlank{"{}"})
+            if(code !in 200..299)throw IllegalStateException(json.optString("error","AI service returned HTTP $code"))
+            val arr=json.optJSONArray("questions")?:throw IllegalStateException("AI returned no questions.")
+            for(i in 0 until arr.length()){
+                val item=arr.optJSONObject(i)?:continue
+                val q=item.optString("question").trim()
+                val opts=item.optJSONArray("options")?:continue
+                if(q.isBlank()||opts.length()!=4)continue
+                val options=(0 until 4).map{opts.optString(it)}
+                val answer=item.optInt("answerIndex",-1)
+                if(answer !in 0..3||options.any{it.isBlank()}||!seen.add(q.lowercase()))continue
+                all.add(M(all.size,grade,subject,item.optString("difficulty",difficulty),item.optString("topic",subject),q,options,answer,item.optString("explanation")))
+            }
+        }finally{connection.disconnect()}
+        if(all.size< count-remaining+batch)throw IllegalStateException("AI returned too few unique questions. Please retry.")
+        remaining-=batch
+    }
+    return all
+}
+
 private fun test(maxG:Int,s:String,d:String,size:Int,seed:Int,fromGrade:Int=1):List<M>{
  val ds=if(d=="Mixed")listOf("Easy","Medium","Hard")else listOf(d)
  val all=ArrayList<M>()
@@ -262,7 +311,7 @@ private fun test(maxG:Int,s:String,d:String,size:Int,seed:Int,fromGrade:Int=1):L
  }
  return all.shuffled(kotlin.random.Random(seed*7919+s.hashCode())).take(size).mapIndexed{index,q->shuffleOptions(q,seed*31+index+s.hashCode())}
 }
-private fun bank(g:Int,s:String,d:String,n:Int,variantSeed:Int=0):List<M> = List(n){i->make(g,s,d,i+variantSeed)}
+private fun bank(g:Int,s:String,d:String,n:Int,variantSeed:Int=0):List<M> = emptyList()
 private data class Fact(val term:String,val meaning:String)
 private fun facts(s:String):List<Fact> = when(s){
  "Science"->listOf(Fact("evaporation","a liquid changes into gas"),Fact("photosynthesis","plants use light to make food"),Fact("gravity","an attraction between objects with mass"),Fact("condensation","gas changes into liquid"),Fact("friction","a force that resists sliding motion"),Fact("ecosystem","living things interact with each other and their surroundings"),Fact("reflection","light bounces from a surface"),Fact("magnetism","a force associated with magnets and magnetic fields"),Fact("habitat","the natural place where an organism lives"),Fact("insulator","a material that slows heat or electric flow"),Fact("producer","an organism that makes its own food"),Fact("renewable resource","a resource replenished naturally over time"))
