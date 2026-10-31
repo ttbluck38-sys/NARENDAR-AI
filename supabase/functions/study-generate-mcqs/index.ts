@@ -29,6 +29,8 @@ Deno.serve(async (req: Request) => {
   const difficulty = typeof input.difficulty === "string" ? input.difficulty : "Mixed";
   const language = typeof input.language === "string" ? input.language : "English";
   const topic = typeof input.topic === "string" ? input.topic.trim().slice(0, 160) : "";
+  const studentName = typeof input.studentName === "string" ? input.studentName.trim().slice(0, 80) : "";
+  const learningLevel = typeof input.learningLevel === "string" ? input.learningLevel.trim().slice(0, 240) : "";
   const count = Math.max(1, Math.min(10, Number(input.count) || 10));
   const allowedDifficulty = ["Easy", "Medium", "Hard", "Mixed"];
   const allowedLanguage = ["English", "Urdu", "Sindhi"];
@@ -49,14 +51,16 @@ Deno.serve(async (req: Request) => {
     "Every question must have exactly four distinct options and exactly one defensible correct answer.",
     "Never repeat a question or merely reword an excluded question.",
     "Do not use trick wording, ambiguous facts, or answer patterns that reveal the key.",
-    "Match the requested school grade and subject. Keep language consistent with the requested language.",
+    "Match the requested school grade, learner level, and subject. Tailor vocabulary, complexity, distractor plausibility, and explanations to the learner. Keep language consistent with the requested language.",
     "Explanations must teach the reasoning, not just state the answer.",
     "Do not include markdown fences or text outside the JSON object."
   ].join(" ");
 
   const user = [
     `Generate exactly ${count} fresh MCQs.`,
+    `Student: ${studentName || "the learner"} (use the name only in a brief encouraging introduction if appropriate; never put private profile details into the question text)`,
     `Class: ${grade}`,
+    `Learning level guidance: ${learningLevel || "match the requested school class"}`,
     `Subject: ${subject}`,
     `Difficulty: ${difficulty}`,
     `Topic preference: ${topic || "cover varied appropriate topics"}`,
