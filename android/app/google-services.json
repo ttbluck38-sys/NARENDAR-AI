@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "466200909416",
+    "project_id": "studypilot-ai-ac864",
+    "storage_bucket": "studypilot-ai-ac864.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:466200909416:android:f84ffbfa2064d571d94ddd",
+        "android_client_info": {
+          "package_name": "com.company.studypilotai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIaxN9Cj_Nj2Hk8g-dsCjQEMqDBOJCmYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
