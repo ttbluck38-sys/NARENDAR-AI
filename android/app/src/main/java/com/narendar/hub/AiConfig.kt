@@ -1,16 +1,16 @@
 package com.narendar.hub
 
 /**
- * Set these two values to your Supabase project URL and publishable/anon key.
- * Never put the OpenRouter API key in this Android file.
+ * StudyPilot AI now uses Firebase Functions for its AI backend.
+ * No Supabase project or client key is used by the app.
+ * The legacy property names are kept temporarily so the existing quiz UI
+ * can migrate without rewriting the large UI file in one change.
  */
 internal object AiConfig {
-    const val SUPABASE_URL = "https://YOUR_PROJECT_REF.supabase.co"
-    const val SUPABASE_PUBLISHABLE_KEY = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY"
+    // Firebase HTTPS function. The function exposes /functions/v1/study-generate-mcqs.
+    const val SUPABASE_URL = "https://us-central1-studypilot-ai-ac864.cloudfunctions.net/api"
+    const val SUPABASE_PUBLISHABLE_KEY = "firebase-client"
 
     fun isConfigured(): Boolean =
-        SUPABASE_URL.startsWith("https://") &&
-        !SUPABASE_URL.contains("YOUR_PROJECT_REF") &&
-        SUPABASE_PUBLISHABLE_KEY.isNotBlank() &&
-        !SUPABASE_PUBLISHABLE_KEY.startsWith("YOUR_")
+        SUPABASE_URL.startsWith("https://us-central1-studypilot-ai-ac864.cloudfunctions.net/")
 }
