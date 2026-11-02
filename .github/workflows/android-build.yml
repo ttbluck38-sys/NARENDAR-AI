@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  STUDYPILOT_BRANCH: studypilot-mcq-fix
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -44,13 +47,30 @@ jobs:
         run: |
           if [ -z "$FIREBASE_GOOGLE_SERVICES_JSON" ]; then
             echo "Missing GitHub Actions secret: FIREBASE_GOOGLE_SERVICES_JSON"
+            echo "Add it under Settings > Secrets and variables > Actions for this repository."
             exit 1
           fi
           printf '%s' "$FIREBASE_GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          python3 - <<'PY'
+          import json
+          p = 'android/app/google-services.json'
+          with open(p, encoding='utf-8') as f:
+              data = json.load(f)
+          project = data.get('project_info', {}).get('project_id')
+          package_names = [
+              c.get('client_info', {}).get('android_client_info', {}).get('package_name')
+              for c in data.get('client', [])
+          ]
+          if project != 'studypilot-ai-ac864':
+              raise SystemExit(f'Wrong Firebase project in secret: {project!r}')
+          if 'com.company.studypilotai' not in package_names:
+              raise SystemExit(f'Firebase package mismatch: {package_names!r}')
+          print('Firebase Android configuration validated.')
+          PY
 
       - name: Build debug APK
         working-directory: android
-        run: gradle assembleDebug --no-daemon
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
