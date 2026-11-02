@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.company.studypilotai"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 35
         versionCode = 3
         versionName = "2.1.0"
