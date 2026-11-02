@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.scale
@@ -36,12 +37,16 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 @Composable fun FixedHub(context:Context){
  val p=remember{context.getSharedPreferences("narendar_fixed",Context.MODE_PRIVATE)}
  var appLanguage by remember{mutableStateOf(p.getString("app_language","English") ?: "English")};var studentName by remember{mutableStateOf(p.getString("student_name","") ?: "")};var grade by remember{mutableIntStateOf(p.getInt("grade",-1))};var page by remember{mutableStateOf(if(grade<0)"pick" else "home")};var dark by remember{mutableStateOf(p.getBoolean("dark",false))}
- var xp by remember{mutableIntStateOf(p.getInt("xp",0))};var correct by remember{mutableIntStateOf(p.getInt("correct",0))};var tried by remember{mutableIntStateOf(p.getInt("tried",0))};var notes by remember{mutableStateOf(loadNotes(p))};var tasks by remember{mutableStateOf(loadTasks(p))};var toast by remember{mutableStateOf("")}
+ var xp by remember{mutableIntStateOf(p.getInt("xp",0))};var correct by remember{mutableIntStateOf(p.getInt("correct",0))};var tried by remember{mutableIntStateOf(p.getInt("tried",0))};var notes by remember{mutableStateOf(loadNotes(p))};var tasks by remember{mutableStateOf(loadTasks(p))};var toast by remember{mutableStateOf("")};var showExitDialog by remember{mutableStateOf(false)}
  fun record(ok:Boolean){tried++;if(ok)correct++;xp+=if(ok)20 else 5;p.edit().putInt("xp",xp).putInt("correct",correct).putInt("tried",tried).apply()}
  fun saveNotes(v:List<Note>){notes=v;p.edit().putString("notes",notesJson(v)).apply()}
  fun saveTasks(v:List<Task>){tasks=v;p.edit().putString("tasks",tasksJson(v)).apply()}
+ BackHandler {
+  if (page != "home" && page != "pick") page = "home" else showExitDialog = true
+ }
  LaunchedEffect(toast){if(toast.isNotEmpty()){delay(1500);toast=""}}
  androidx.compose.runtime.CompositionLocalProvider(LocalAppLanguage provides appLanguage) { MaterialTheme(colorScheme=if(dark)darkColorScheme(primary=Color(0xFF9AB8FF),secondary=Color(0xFF70E0BE),tertiary=Color(0xFFFF9DC7))else lightColorScheme(primary=palette[0],secondary=palette[2],tertiary=palette[4],surface=Color(0xFFF7F8FC))){
+  if(showExitDialog){AlertDialog(onDismissRequest={showExitDialog=false},title={AppText("Close StudyPilot AI?")},text={AppText("Do you want to close the app?")},confirmButton={TextButton(onClick={showExitDialog=false;(context as? android.app.Activity)?.finish()}){AppText("Close app")}},dismissButton={TextButton(onClick={showExitDialog=false}){AppText("Stay")}})}
   if(page=="pick"){Pick(grade,appLanguage,{appLanguage=it;p.edit().putString("app_language",it).apply()},studentName,{studentName=it;p.edit().putString("student_name",it).apply()}){grade=it;p.edit().putInt("grade",it).apply();page="home"};return@MaterialTheme}
   Scaffold(topBar={CenterAlignedTopAppBar(title={AppText("StudyPilot AI",fontWeight=FontWeight.Black)})},bottomBar={NavigationBar{listOf("home" to "⌂","learn" to "▣","quiz" to "✓","tutor" to "✦","library" to "▤","profile" to "●").forEach{(k,ic)->NavigationBarItem(page==k,{page=k},icon={AppText(ic)},label={AppText(k.replaceFirstChar{it.uppercase()})})}}}){pad->Box(Modifier.fillMaxSize().padding(pad)){AnimatedContent(page,label="page"){s->when(s){"home"->Home(grade,xp,correct,tried,tasks.count{!it.done},notes.size){page=it};"learn"->Learn(grade){page="quiz"};"quiz"->Quiz(grade,appLanguage,studentName,::record){toast=it};"library"->Library(grade,notes,tasks,::saveNotes,::saveTasks);"tutor"->Tutor(grade,appLanguage);"profile"->Profile(grade,xp,correct,tried,studentName,{studentName=it;p.edit().putString("student_name",it).apply()},dark,{dark=it;p.edit().putBoolean("dark",it).apply()},appLanguage,{appLanguage=it;p.edit().putString("app_language",it).apply()}){grade=-1;p.edit().putInt("grade",-1).apply();page="pick"}}};AnimatedVisibility(toast.isNotEmpty(),enter=slideInVertically{it}+fadeIn(),exit=fadeOut(),modifier=Modifier.align(Alignment.BottomCenter).padding(8.dp)){Surface(shape=RoundedCornerShape(18.dp),tonalElevation=8.dp){AppText(toast,Modifier.padding(14.dp),fontWeight=FontWeight.Bold)}}}}
  }
