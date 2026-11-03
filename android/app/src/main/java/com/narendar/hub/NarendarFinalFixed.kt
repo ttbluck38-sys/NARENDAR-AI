@@ -51,7 +51,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
    sessionReady = true
   }
  LaunchedEffect(toast){if(toast.isNotEmpty()){delay(1500);toast=""}}
- LaunchedEffect(grade, studentName, appLanguage) {
+ LaunchedEffect(grade, studentName, appLanguage, StudentAuth.token(context)) {
    if (StudentAuth.token(context).isNotBlank() && grade in 1..12) {
     withContext(Dispatchers.IO) { runCatching { StudentAuth.saveProfile(context, studentName, grade, appLanguage) } }
    }
@@ -76,6 +76,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 
 @Composable private fun Quiz(g:Int,appLanguage:String,studentName:String,record:(Boolean)->Unit,toast:(String)->Unit){
  val context = LocalContext.current
+ val scope = rememberCoroutineScope()
  var sub by remember{mutableStateOf("Mathematics")}
  var diff by remember{mutableStateOf("Mixed")}
  var size by remember{mutableIntStateOf(10)}
@@ -114,7 +115,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   Card(Modifier.fillMaxWidth().padding(vertical=10.dp),shape=RoundedCornerShape(25.dp)){AppText(q.q,Modifier.padding(21.dp),fontSize=19.sp,fontWeight=FontWeight.Black)}
   q.opts.forEachIndexed{i,o->
    val bad=pick==i&&i!=q.ans;val good=pick>=0&&i==q.ans
-   Card(onClick={if(pick<0){pick=i;record(i==q.ans);StudentAuth.logEvent(context,"mcq_answer",q.subject,q.topic,q.q,q.opts[i],q.opts[q.ans],i==q.ans);if(i==q.ans)score++;toast(if(i==q.ans)"Correct! 🎉" else "Review explanation 📘")}},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=if(good)Color(0xFF16A34A).copy(.18f)else if(bad)Color(0xFFDC2626).copy(.18f)else MaterialTheme.colorScheme.surfaceVariant)){
+   Card(onClick={if(pick<0){pick=i;record(i==q.ans);scope.launch { withContext(Dispatchers.IO) { StudentAuth.logEvent(context,"mcq_answer",q.subject,q.topic,q.q,q.opts[i],q.opts[q.ans],i==q.ans) } };if(i==q.ans)score++;toast(if(i==q.ans)"Correct! 🎉" else "Review explanation 📘")}},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=if(good)Color(0xFF16A34A).copy(.18f)else if(bad)Color(0xFFDC2626).copy(.18f)else MaterialTheme.colorScheme.surfaceVariant)){
     Row(Modifier.padding(15.dp)){AppText("${'A'+i}",fontWeight=FontWeight.Black,color=if(good)Color(0xFF16A34A)else if(bad)Color(0xFFDC2626)else MaterialTheme.colorScheme.primary);Spacer(Modifier.width(12.dp));AppText(o,fontWeight=FontWeight.SemiBold)}
    }
   }
