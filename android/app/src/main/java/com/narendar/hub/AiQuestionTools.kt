@@ -87,14 +87,14 @@ internal fun AiQuestionTools(
                 }
             }, modifier = Modifier.fillMaxWidth()) { AppText("🔊 Read question + all options") }
 
-            OutlinedButton(onClick = { onReveal(); StudentAuth.logEvent(context,"answer_reveal","MCQ","",question,selectedAnswer.orEmpty(),correctAnswer,null); explanation = "Correct answer: $correctAnswer"; error = "" }, enabled = true, modifier = Modifier.fillMaxWidth()) { AppText("Show Correct Answer") }
+            OutlinedButton(onClick = { onReveal(); scope.launch { withContext(Dispatchers.IO) { StudentAuth.logEvent(context,"answer_reveal","MCQ","",question,selectedAnswer.orEmpty(),correctAnswer,null) } }; explanation = "Correct answer: $correctAnswer"; error = "" }, enabled = true, modifier = Modifier.fillMaxWidth()) { AppText("Show Correct Answer") }
 
             Button(onClick = {
                 loading = true; error = ""; explanation = ""; sourceUrl = ""; googleQuery = ""
                 scope.launch {
                     try {
                         explanation = withContext(Dispatchers.IO) { requestExplanation(question, options, correctAnswer, selectedAnswer, language, context) }
-                        StudentAuth.logEvent(context,"ai_explanation","MCQ","",question,selectedAnswer.orEmpty(),correctAnswer,null)
+                        withContext(Dispatchers.IO) { StudentAuth.logEvent(context,"ai_explanation","MCQ","",question,selectedAnswer.orEmpty(),correctAnswer,null) }
                     } catch (e: Exception) { error = e.message ?: "StudyPilot AI explanation failed. Please retry." }
                     finally { loading = false }
                 }
