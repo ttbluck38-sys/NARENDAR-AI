@@ -87,7 +87,7 @@ export default {
       body.language = profile.preferred_language || body.language || "English";
       body.learningLevel = JSON.stringify({ preferences: profile.learning_preferences || {}, memory: profile.student_memory || {}, recent_attempts: attempts.length, independent_correct: independentCorrect, answer_reveals: reveals, recent_topics: history.slice(0, 25).map((e: any) => ({ subject: e.subject, topic: e.topic, type: e.event_type, correct: e.is_correct })) }).slice(0, 5000);
       const count = Math.max(1, Math.min(10, Number(body.count || 10)));
-      const excluded = Array.isArray(body.excludeQuestions) ? body.excludeQuestions.map(normalize).filter(Boolean).slice(0, 100) : [];
+      const excluded = Array.isArray(body.excludeQuestions) ? body.excludeQuestions.map(normalize).filter(Boolean).slice(-100) : [];
       let lastError = "AI could not generate enough valid questions.";
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
