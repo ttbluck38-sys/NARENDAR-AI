@@ -10,63 +10,24 @@ on:
 permissions:
   contents: read
 
-env:
-  STUDYPILOT_BRANCH: studypilot-mcq-fix
-
 jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Java 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
 
       - name: Set up Gradle 8.9
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-
-      - name: Prepare StudyPilot AI logo from repository image
-        run: |
-          git fetch origin main --depth=1
-          mkdir -p /tmp/studypilot-logo
-          git show origin/main:file_00000000567081f4a05fb87d45adc140.png > /tmp/studypilot-logo/source.png
-          python3 -m venv /tmp/studypilot-logo-venv
-          /tmp/studypilot-logo-venv/bin/pip install Pillow
-          /tmp/studypilot-logo-venv/bin/python .github/scripts/crop_studypilot_logo.py /tmp/studypilot-logo/source.png android/app/src/main/res/drawable-nodpi/studypilot_logo.png
-
-      - name: Restore Firebase Android configuration
-        env:
-          FIREBASE_GOOGLE_SERVICES_JSON: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON }}
-        run: |
-          if [ -z "$FIREBASE_GOOGLE_SERVICES_JSON" ]; then
-            echo "Missing GitHub Actions secret: FIREBASE_GOOGLE_SERVICES_JSON"
-            echo "Add it under Settings > Secrets and variables > Actions for this repository."
-            exit 1
-          fi
-          printf '%s' "$FIREBASE_GOOGLE_SERVICES_JSON" > android/app/google-services.json
-          python3 - <<'PY'
-          import json
-          p = 'android/app/google-services.json'
-          with open(p, encoding='utf-8') as f:
-              data = json.load(f)
-          project = data.get('project_info', {}).get('project_id')
-          package_names = [
-              c.get('client_info', {}).get('android_client_info', {}).get('package_name')
-              for c in data.get('client', [])
-          ]
-          if project != 'studypilot-ai-ac864':
-              raise SystemExit(f'Wrong Firebase project in secret: {project!r}')
-          if 'com.company.studypilotai' not in package_names:
-              raise SystemExit(f'Firebase package mismatch: {package_names!r}')
-          print('Firebase Android configuration validated.')
-          PY
 
       - name: Build debug APK
         working-directory: android
@@ -78,3 +39,4 @@ jobs:
           name: StudyPilot-AI-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 14
