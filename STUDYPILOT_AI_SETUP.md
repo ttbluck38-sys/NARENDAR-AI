@@ -1,72 +1,42 @@
-# StudyPilot AI — district demo setup
+# StudyPilot AI — current setup
 
-This branch adds AI explanations to the quiz and a text-to-speech button for the question and every option. Keep `main` unchanged while testing.
+## Backend
 
-## 1. Add GitHub Actions secrets
+- Supabase project: `coogryjidljqyzzsymte`
+- Project URL: `https://coogryjidljqyzzsymte.supabase.co`
+- Android package: `com.company.studypilotai`
+- OpenRouter model: `openrouter/free`
 
-Open **Settings → Secrets and variables → Actions → New repository secret**:
-https://github.com/ttbluck38-sys/NARENDAR-AI/settings/secrets/actions
+The Android app uses the Supabase publishable key. The OpenRouter API key must stay in Supabase Edge Function Secrets and must never be placed in Kotlin, Android resources, GitHub source, or the APK.
 
-Create these secrets (the names must match exactly):
+Required Supabase Edge Function secret:
 
-| Secret name | Where it comes from | Purpose |
-|---|---|---|
-| `SUPABASE_URL` | Supabase project URL, e.g. `https://YOUR_PROJECT_REF.supabase.co` | Used when building the Android APK |
-| `SUPABASE_PUBLISHABLE_KEY` | Supabase Project Settings → API Keys → publishable key (or legacy anon key) | Public client key used by the app |
-| `SUPABASE_ACCESS_TOKEN` | Supabase account access tokens | Lets the deploy workflow manage this project's function |
-| `SUPABASE_PROJECT_REF` | Project reference in Supabase project URL / General settings | Tells deployment which project to update |
-| `OPENROUTER_API_KEY` | OpenRouter account → Keys | Secret used only by the Edge Function |
+- `OPENROUTER_API_KEY_2`
 
-Never put `OPENROUTER_API_KEY` in Kotlin, Android resources, the APK, or a public repository. Never paste secret values into chat or screenshots. The Supabase access token is also sensitive.
+The following StudyPilot functions read that secret:
 
-Useful pages:
-- Supabase dashboard: https://supabase.com/dashboard
-- Supabase account tokens: https://supabase.com/dashboard/account/tokens
-- OpenRouter keys: https://openrouter.ai/settings/keys
-- OpenRouter free model directory: https://openrouter.ai/models?pricing=free
+- `study-generate-mcqs` — generates MCQs.
+- `study-explain` — explains an MCQ.
+ 
+Do not change or redeploy `scamshield-check`; it belongs to ScamShield.
 
-## 2. Deploy the AI backend
+## Android build
 
-After all five GitHub secrets are saved:
-1. Open the repository Actions tab: https://github.com/ttbluck38-sys/NARENDAR-AI/actions
-2. Select **Deploy StudyPilot AI backend**.
-3. Click **Run workflow** and choose branch `studypilot-mcq-fix`.
-4. Wait for the workflow to finish successfully.
+The Android Build workflow compiles the app and uploads `StudyPilot-AI-debug-apk`. It does not require Firebase configuration or GitHub Actions secrets. It can be run manually from the repository Actions tab.
 
-That workflow stores `OPENROUTER_API_KEY` as a Supabase Edge Function secret and deploys `supabase/functions/study-explain/index.ts`. The key never goes to the phone.
+## Current limitations
 
-## 3. Build the Android APK
+- The app currently stores the learner profile and progress locally on the device. It does not yet provide Supabase email/password signup or cross-device account sync.
+- The tutor screen currently uses its offline knowledge engine and Wikipedia lookup; it is not yet connected to a general-purpose OpenRouter chat endpoint.
+- The Edge Functions currently allow calls using the public publishable key without a signed-in user. This is suitable only for a limited demo; add Supabase Auth and server-side rate limits before public release.
 
-1. In Actions, select **Android Build**.
-2. Click **Run workflow** and choose `studypilot-mcq-fix`.
-3. Wait for the build to finish. Open the successful run, scroll to **Artifacts**, and download `NarendarHub-debug-apk`.
-4. Extract the ZIP to find `app-debug.apk`, then install it on the demo phone.
+## Test checklist
 
-The workflow injects `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` during the build. The values are not committed back to the source file. If you add or change these secrets, manually run Android Build again.
+1. Open the app and select a class.
+2. Generate a short MCQ quiz.
+3. Submit an answer and check feedback.
+4. Request an AI explanation.
+5. Test English, Urdu and Sindhi.
+6. Check the Android app on the target Android 8.1 phone.
 
-## 4. Test on the phone
-
-- Start a quiz and choose an answer.
-- Check the existing correct/incorrect feedback.
-- Tap **Why is my answer right or wrong?** and test English, Urdu and Sindhi.
-- Tap **Read question + all options** and check the device's speech engine.
-- Try **Read AI explanation** if the explanation appears.
-
-Urdu/Sindhi speech availability depends on the text-to-speech voices installed on the phone. AI requests require internet and may be rate-limited or temporarily unavailable because free model availability can change.
-
-## Demo security note
-
-The Edge Function is configured without Supabase JWT verification so it can be called by the demo app using a publishable/anon key. This endpoint is therefore publicly callable; use it only for the controlled demo, monitor OpenRouter usage, and do not publish the app widely until proper user authentication and server-side rate limiting are added. The Supabase publishable/anon key is not the OpenRouter secret.
-
-## Files changed
-
-- `android/app/src/main/java/com/narendar/hub/AiQuestionTools.kt` — language selection, question/options read-aloud, AI explanation request.
-- `android/app/src/main/java/com/narendar/hub/AiConfig.kt` — build-time Supabase configuration placeholders.
-- `android/app/src/main/java/com/narendar/hub/NarendarFinalFixed.kt` — Quiz screen integration.
-- `android/app/src/main/AndroidManifest.xml` — internet permission.
-- `supabase/functions/study-explain/index.ts` — server-side OpenRouter call.
-- `supabase/config.toml` — function configuration.
-- `.github/workflows/android-build.yml` — optional build-time Supabase config injection.
-- `.github/workflows/study-explain-deploy.yml` — manual backend deployment workflow.
-
-A successful CI build only proves the APK compiled. The AI backend still needs deployment, and the final phone checks above are needed before calling the demo fully verified.
+A successful CI build proves compilation only. The quiz and explanation endpoints still need real-device testing.
