@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,7 +30,7 @@ import java.net.URL
   Spacer(Modifier.height(24.dp));Text(if(signup)"Create your student account" else "Welcome back",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
   if(signup)OutlinedTextField(name,{name=it},label={Text("Your name")},singleLine=true,modifier=Modifier.fillMaxWidth())
   OutlinedTextField(email,{email=it},label={Text("Email")},singleLine=true,modifier=Modifier.fillMaxWidth())
-  OutlinedTextField(password,{password=it},label={Text("Password")},singleLine=true,modifier=Modifier.fillMaxWidth())
+  OutlinedTextField(password,{password=it},label={Text("Password")},singleLine=true,visualTransformation=PasswordVisualTransformation(),modifier=Modifier.fillMaxWidth())
   if(error.isNotBlank())Text(error,color=MaterialTheme.colorScheme.error)
   Spacer(Modifier.height(12.dp))
   Button(enabled=!busy&&email.contains("@")&&password.length>=6&&(!signup||name.isNotBlank()),onClick={busy=true;error="";scope.launch{try{withContext(Dispatchers.IO){if(signup)StudentAuth.signUp(context,email,password,name)else StudentAuth.signIn(context,email,password)};onSignedIn()}catch(e:Exception){error=e.message?: "Could not sign in."}finally{busy=false}}},modifier=Modifier.fillMaxWidth()){
