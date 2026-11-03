@@ -45,9 +45,17 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  BackHandler {
   if (page != "home" && page != "pick") page = "home" else showExitDialog = true
  }
- LaunchedEffect(Unit){val valid=withContext(Dispatchers.IO){StudentAuth.restore(context)};if(!valid)page="auth";sessionReady=true}
+ LaunchedEffect(Unit) {
+   val valid = withContext(Dispatchers.IO) { StudentAuth.restore(context) }
+   if (!valid) { page = "auth" }
+   sessionReady = true
+  }
  LaunchedEffect(toast){if(toast.isNotEmpty()){delay(1500);toast=""}}
- LaunchedEffect(grade,studentName,appLanguage){if(StudentAuth.token(context).isNotBlank()&&grade in 1..12){withContext(Dispatchers.IO){runCatching{StudentAuth.saveProfile(context,studentName,grade,appLanguage)}}}}
+ LaunchedEffect(grade, studentName, appLanguage) {
+   if (StudentAuth.token(context).isNotBlank() && grade in 1..12) {
+    withContext(Dispatchers.IO) { runCatching { StudentAuth.saveProfile(context, studentName, grade, appLanguage) } }
+   }
+  }
  androidx.compose.runtime.CompositionLocalProvider(LocalAppLanguage provides appLanguage) { MaterialTheme(colorScheme=if(dark)darkColorScheme(primary=Color(0xFF9AB8FF),secondary=Color(0xFF70E0BE),tertiary=Color(0xFFFF9DC7))else lightColorScheme(primary=palette[0],secondary=palette[2],tertiary=palette[4],surface=Color(0xFFF7F8FC))){
   if(!sessionReady){Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator()};return@MaterialTheme}
   if(showExitDialog){AlertDialog(onDismissRequest={showExitDialog=false},title={AppText("Close StudyPilot AI?")},text={AppText("Do you want to close the app?")},confirmButton={TextButton(onClick={showExitDialog=false;(context as? android.app.Activity)?.finish()}){AppText("Close app")}},dismissButton={TextButton(onClick={showExitDialog=false}){AppText("Stay")}})}
@@ -82,7 +90,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var generationError by remember{mutableStateOf("")}
  var fromGrade by remember(g){mutableIntStateOf(if(g in 1..8)g else 8)}
   val maxG=if(g<0)9 else g
- LaunchedEffect(start,sub,diff,size,seed,g,fromGrade,studentName,appLanguage){if(start){generating=true;generationError="";try{questions=withContext(Dispatchers.IO){generateAiQuiz(g,fromGrade,sub,diff,size,studentName,appLanguage)}}catch(e:Exception){generationError=e.message ?: "AI question generation failed. Check the Supabase AI backend and retry."}finally{generating=false}}}
+ LaunchedEffect(start,sub,diff,size,seed,g,fromGrade,studentName,appLanguage){if(start){generating=true;generationError="";try{questions=withContext(Dispatchers.IO){generateAiQuiz(g,fromGrade,sub,diff,size,studentName,appLanguage,context)}}catch(e:Exception){generationError=e.message ?: "AI question generation failed. Check the Supabase AI backend and retry."}finally{generating=false}}}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
   AppText("Quiz Arena",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
      AppText("Fresh AI-generated questions tailored to the student profile, class, subject and difficulty.",color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -256,7 +264,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 }
 
 
-private fun generateAiQuiz(maxGrade:Int,fromGrade:Int,subject:String,difficulty:String,count:Int,studentName:String,language:String):List<M>{
+private fun generateAiQuiz(maxGrade:Int,fromGrade:Int,subject:String,difficulty:String,count:Int,studentName:String,language:String,context:Context):List<M>{
     if(!AiConfig.isConfigured()) throw IllegalStateException("StudyPilot Supabase AI backend is not configured. Please retry after backend deployment is complete.")
     val grade=if(maxGrade in 1..9) fromGrade.coerceIn(1,maxGrade) else fromGrade.coerceIn(1,9)
     val all=ArrayList<M>()
