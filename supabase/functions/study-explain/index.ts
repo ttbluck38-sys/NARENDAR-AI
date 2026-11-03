@@ -10,7 +10,12 @@ export default {
     if (req.method !== "POST") return Response.json({ error: "POST required." }, { status: 405 });
     try {
       const apiKey = Deno.env.get("OPENROUTER_API_KEY_2")?.trim();
-      if (!apiKey) return Response.json({ error: "StudyPilot OpenRouter backend key is not configured." }, { status: 503 });
+      if (!apiKey) return Response.json({ error: "StudyPilot AI is temporarily unavailable." }, { status: 503 });
+      const authorization = req.headers.get("Authorization") || "";
+      const publishable = req.headers.get("apikey") || "";
+      if (!authorization.startsWith("Bearer ") || !publishable) return Response.json({ error: "Sign in to use StudyPilot AI explanations." }, { status: 401 });
+      const userResponse = await fetch("https://coogryjidljqyzzsymte.supabase.co/auth/v1/user", { headers: { apikey: publishable, Authorization: authorization } });
+      if (!userResponse.ok) return Response.json({ error: "Your session expired. Please sign in again." }, { status: 401 });
       const body = await req.json().catch(() => ({})) as Record<string, unknown>;
       const question = clean(body.question, 1800);
       const options = Array.isArray(body.options) ? body.options.map((x: unknown) => clean(x, 500)).slice(0, 4) : [];
