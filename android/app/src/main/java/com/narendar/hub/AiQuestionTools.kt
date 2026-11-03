@@ -90,38 +90,12 @@ internal fun AiQuestionTools(
             OutlinedButton(onClick = { if (!megaTest || revealUses < 10) { onReveal(); explanation = "Correct answer: $correctAnswer"; error = "" } else error = "All 10 answer reveals have been used for this mega test." }, enabled = !megaTest || revealUses < 10, modifier = Modifier.fillMaxWidth()) { AppText(if (megaTest) "Show Correct Answer (${10 - revealUses} left)" else "Show Correct Answer") }
 
             Button(onClick = {
-                loading = true; error = ""; explanation = ""
+                loading = true; error = ""; explanation = ""; sourceUrl = ""; googleQuery = ""
                 scope.launch {
                     try {
-                        explanation = withContext(Dispatchers.Default) {
-                            val prompt = question + ". Options: " + options.joinToString("; ")
-                            val offline = StudyPilotAIEngine.ask(prompt, subject = "MCQ explanation", preferredLanguage = language)
-                            if (offline.confidence >= 0.43 && !offline.needsClarification) {
-                                val verdict = when (language) {
-                                    "Urdu" -> if (selectedAnswer == correctAnswer) "آپ کا جواب درست ہے۔ " else "درست جواب: $correctAnswer۔ "
-                                    "Sindhi" -> if (selectedAnswer == correctAnswer) "توهان جو جواب صحيح آهي. " else "صحيح جواب: $correctAnswer. "
-                                    else -> if (selectedAnswer == correctAnswer) "Your answer is correct. " else "Correct answer: $correctAnswer. "
-                                }
-                                verdict + offline.text
-                            } else {
-                                val web = StudyPilotWebSearch.search(question, language)
-                                if (web != null) {
-                                    sourceUrl = web.sourceUrl
-                                    val webText = if (language == "English") web.extract else StudyPilotWebSearch.translateForLanguage(web.extract, language)
-                                    if (webText != null) "Web reference: ${web.title}\n$webText" else { googleQuery = question; "A source was found but could not be translated. Open Google results below." }
-                                } else if (AiConfig.isConfigured()) {
-                                    withContext(Dispatchers.IO) { requestExplanation(question, options, correctAnswer, selectedAnswer, language) }
-                                } else {
-                                    googleQuery = question
-                                    when (language) {
-                                        "Urdu" -> "آف لائن علم اور ویب خلاصے سے جواب نہیں ملا۔ تازہ نتائج کے لیے نیچے گوگل تلاش کھولیں۔"
-                                        "Sindhi" -> "آف لائن ڄاڻ يا ويب خلاصو جواب نه ڏئي سگهيو. نون نتيجن لاءِ هيٺ گوگل ڳولا کوليو."
-                                        else -> "I could not verify an answer offline. Open Google results below for current information."
-                                    }
-                                }
-                            }
-                        }
-                    } catch (e: Exception) { error = e.message ?: "AI explanation failed. Check internet and retry." }
+                        explanation = withContext(Dispatchers.IO) { requestExplanation(question, options, correctAnswer, selectedAnswer, language, context) }
+                        StudentAuth.logEvent(context,"ai_explanation","MCQ","",question,selectedAnswer.orEmpty(),correctAnswer,null)
+                    } catch (e: Exception) { error = e.message ?: "StudyPilot AI explanation failed. Please retry." }
                     finally { loading = false }
                 }
             }, enabled = !loading, modifier = Modifier.fillMaxWidth()) {
@@ -153,7 +127,7 @@ internal fun AiQuestionTools(
     }
 }
 
-private fun requestExplanation(question: String, options: List<String>, correctAnswer: String, selectedAnswer: String?, language: String): String {
+private fun requestExplanation(question: String, options: List<String>, correctAnswer: String, selectedAnswer: String?, language: String, context: android.content.Context): String {
     val endpoint = AiConfig.SUPABASE_URL.trimEnd('/') + "/functions/v1/study-explain"
     val body = JSONObject().apply {
         put("question", question)
@@ -170,6 +144,7 @@ private fun requestExplanation(question: String, options: List<String>, correctA
         setRequestProperty("Content-Type", "application/json; charset=utf-8")
         setRequestProperty("Accept", "application/json")
         setRequestProperty("apikey", AiConfig.SUPABASE_PUBLISHABLE_KEY)
+        if (StudentAuth.token(context).isNotBlank()) setRequestProperty("Authorization", "Bearer " + StudentAuth.token(context))
     }
     try {
         connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
