@@ -260,6 +260,7 @@ private fun generateAiQuiz(maxGrade:Int,fromGrade:Int,subject:String,difficulty:
     var remaining=count
     while(remaining>0){
         val batch=minOf(10,remaining)
+        val beforeBatch=all.size
         val body=JSONObject().apply{
             put("grade",grade);put("subject",subject);put("difficulty",difficulty);put("language",language)
             put("count",batch);put("studentName",studentName.take(80))
@@ -292,8 +293,9 @@ private fun generateAiQuiz(maxGrade:Int,fromGrade:Int,subject:String,difficulty:
                 all.add(M(all.size,grade,subject,item.optString("difficulty",difficulty),item.optString("topic",subject),q,options,answer,item.optString("explanation")))
             }
         }finally{connection.disconnect()}
-        if(all.size< count-remaining+batch)throw IllegalStateException("AI returned too few unique questions. Please retry.")
-        remaining-=batch
+        val added=all.size-beforeBatch
+        if(added<=0)throw IllegalStateException("StudyPilot AI could not produce another unique batch. Please retry the remaining questions.")
+        remaining-=added
     }
     return all
 }
