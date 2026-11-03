@@ -12,6 +12,7 @@ internal object StudentAuth {
  fun token(c:Context)=prefs(c).getString("access_token","").orEmpty()
  fun userId(c:Context)=prefs(c).getString("user_id","").orEmpty()
  fun email(c:Context)=prefs(c).getString("email","").orEmpty()
+ fun restore(c:Context):Boolean{val p=prefs(c);val refresh=p.getString("refresh_token","").orEmpty();if(refresh.isBlank())return false;if(p.getLong("expires_at",0L)>System.currentTimeMillis()/1000+120)return true;return try{authRequest(c,"/auth/v1/token?grant_type=refresh_token",JSONObject().put("refresh_token",refresh));true}catch(_:Exception){logout(c);false}}
  fun logout(c:Context){prefs(c).edit().clear().apply()}
  fun signIn(c:Context,email:String,password:String)=authRequest(c,"/auth/v1/token?grant_type=password",JSONObject().put("email",email.trim()).put("password",password))
  fun signUp(c:Context,email:String,password:String,name:String)=authRequest(c,"/auth/v1/signup",JSONObject().put("email",email.trim()).put("password",password).put("data",JSONObject().put("display_name",name.trim())))
@@ -24,7 +25,7 @@ internal object StudentAuth {
    val user=j.optJSONObject("user")?:throw IllegalStateException("Check your email confirmation, then sign in.")
    val session=StudentSession(j.optString("access_token"),j.optString("refresh_token"),user.optString("id"),user.optString("email"))
    if(session.accessToken.isBlank()||session.userId.isBlank())throw IllegalStateException("Email confirmation may be required. Sign in after confirming your email.")
-   prefs(c).edit().putString("access_token",session.accessToken).putString("refresh_token",session.refreshToken).putString("user_id",session.userId).putString("email",session.email).apply()
+   prefs(c).edit().putString("access_token",session.accessToken).putString("refresh_token",session.refreshToken).putString("user_id",session.userId).putString("email",session.email).putLong("expires_at",System.currentTimeMillis()/1000+j.optLong("expires_in",3600)).apply()
    return session
   }finally{conn.disconnect()}
  }
