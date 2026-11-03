@@ -271,6 +271,7 @@ private fun generateAiQuiz(maxGrade:Int,fromGrade:Int,subject:String,difficulty:
             setRequestProperty("Content-Type","application/json; charset=utf-8")
             setRequestProperty("Accept","application/json")
             setRequestProperty("apikey",AiConfig.SUPABASE_PUBLISHABLE_KEY)
+            if(StudentAuth.token(context).isNotBlank())setRequestProperty("Authorization","Bearer "+StudentAuth.token(context))
         }
         try{
             connection.outputStream.use{it.write(body.toString().toByteArray(Charsets.UTF_8))}
