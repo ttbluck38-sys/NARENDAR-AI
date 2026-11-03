@@ -34,7 +34,9 @@ Deno.serve(async(req)=>{
   content=content.replace(/^\`\`\`json\s*/i,"").replace(/\s*\`\`\`$/i,"");
   const parsed=JSON.parse(content);
   const answer=String(parsed.answer||"").trim();if(!answer)return json({error:"StudyPilot AI returned an empty reply."},502);
-  const updated={...memory,...(parsed.memory_update||{}),last_updated:new Date().toISOString()};
+  const update=parsed.memory_update||{};
+  const mergeList=(key:string)=>Array.from(new Set([...(Array.isArray(memory[key])?memory[key]:[]),...(Array.isArray(update[key])?update[key]:[])].map((x:any)=>String(x).trim()).filter(Boolean))).slice(-20);
+  const updated={...memory,...update,interests:mergeList("interests"),strengths:mergeList("strengths"),needs_practice:mergeList("needs_practice"),goals:mergeList("goals"),last_updated:new Date().toISOString()};
   await fetch(SB_URL+"/rest/v1/student_profiles?user_id=eq."+encodeURIComponent(uid),{method:"PATCH",headers:{apikey:sbKey,Authorization:auth,"Content-Type":"application/json","Prefer":"return=minimal"},body:JSON.stringify({student_memory:updated,updated_at:new Date().toISOString()})});
   await fetch(SB_URL+"/rest/v1/learning_events",{method:"POST",headers:{apikey:sbKey,Authorization:auth,"Content-Type":"application/json","Prefer":"return=minimal"},body:JSON.stringify({user_id:uid,event_type:"chat",question:message,details:{language,answer_preview:answer.slice(0,180)}})});
   return json({answer,memory_updated:true,model:MODEL});
