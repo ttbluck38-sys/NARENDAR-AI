@@ -36,7 +36,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 
 @Composable fun FixedHub(context:Context){
  val p=remember{context.getSharedPreferences("narendar_fixed",Context.MODE_PRIVATE)}
- var appLanguage by remember{mutableStateOf(p.getString("app_language","English") ?: "English")};var studentName by remember{mutableStateOf(p.getString("student_name","") ?: "")};var grade by remember{mutableIntStateOf(p.getInt("grade",-1))};var page by remember{mutableStateOf(if(grade<0)"pick" else "home")};var dark by remember{mutableStateOf(p.getBoolean("dark",false))}
+ var appLanguage by remember{mutableStateOf(p.getString("app_language","English") ?: "English")};var studentName by remember{mutableStateOf(p.getString("student_name","") ?: "")};var grade by remember{mutableIntStateOf(p.getInt("grade",-1))};var page by remember{mutableStateOf(if(StudentAuth.token(context).isBlank())"auth" else if(grade<0)"pick" else "home")};var dark by remember{mutableStateOf(p.getBoolean("dark",false))}
  var xp by remember{mutableIntStateOf(p.getInt("xp",0))};var correct by remember{mutableIntStateOf(p.getInt("correct",0))};var tried by remember{mutableIntStateOf(p.getInt("tried",0))};var notes by remember{mutableStateOf(loadNotes(p))};var tasks by remember{mutableStateOf(loadTasks(p))};var toast by remember{mutableStateOf("")};var showExitDialog by remember{mutableStateOf(false)}
  fun record(ok:Boolean){tried++;if(ok)correct++;xp+=if(ok)20 else 5;p.edit().putInt("xp",xp).putInt("correct",correct).putInt("tried",tried).apply()}
  fun saveNotes(v:List<Note>){notes=v;p.edit().putString("notes",notesJson(v)).apply()}
@@ -44,11 +44,11 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  BackHandler {
   if (page != "home" && page != "pick") page = "home" else showExitDialog = true
  }
- LaunchedEffect(toast){if(toast.isNotEmpty()){delay(1500);toast=""}}
+ LaunchedEffect(toast){if(toast.isNotEmpty()){delay(1500);toast=""}}\n LaunchedEffect(grade,studentName,appLanguage){if(StudentAuth.token(context).isNotBlank()&&grade in 1..12){withContext(Dispatchers.IO){runCatching{StudentAuth.saveProfile(context,studentName,grade,appLanguage)}}}}
  androidx.compose.runtime.CompositionLocalProvider(LocalAppLanguage provides appLanguage) { MaterialTheme(colorScheme=if(dark)darkColorScheme(primary=Color(0xFF9AB8FF),secondary=Color(0xFF70E0BE),tertiary=Color(0xFFFF9DC7))else lightColorScheme(primary=palette[0],secondary=palette[2],tertiary=palette[4],surface=Color(0xFFF7F8FC))){
   if(showExitDialog){AlertDialog(onDismissRequest={showExitDialog=false},title={AppText("Close StudyPilot AI?")},text={AppText("Do you want to close the app?")},confirmButton={TextButton(onClick={showExitDialog=false;(context as? android.app.Activity)?.finish()}){AppText("Close app")}},dismissButton={TextButton(onClick={showExitDialog=false}){AppText("Stay")}})}
-  if(page=="pick"){Pick(grade,appLanguage,{appLanguage=it;p.edit().putString("app_language",it).apply()},studentName,{studentName=it;p.edit().putString("student_name",it).apply()}){grade=it;p.edit().putInt("grade",it).apply();page="home"};return@MaterialTheme}
-  Scaffold(topBar={CenterAlignedTopAppBar(title={AppText("StudyPilot AI",fontWeight=FontWeight.Black)})},bottomBar={NavigationBar{listOf("home" to "⌂","learn" to "▣","quiz" to "✓","tutor" to "✦","library" to "▤","profile" to "●").forEach{(k,ic)->NavigationBarItem(page==k,{page=k},icon={AppText(ic)},label={AppText(k.replaceFirstChar{it.uppercase()})})}}}){pad->Box(Modifier.fillMaxSize().padding(pad)){AnimatedContent(page,label="page"){s->when(s){"home"->Home(grade,xp,correct,tried,tasks.count{!it.done},notes.size){page=it};"learn"->Learn(grade){page="quiz"};"quiz"->Quiz(grade,appLanguage,studentName,::record){toast=it};"library"->Library(grade,notes,tasks,::saveNotes,::saveTasks);"tutor"->Tutor(grade,appLanguage);"profile"->Profile(grade,xp,correct,tried,studentName,{studentName=it;p.edit().putString("student_name",it).apply()},dark,{dark=it;p.edit().putBoolean("dark",it).apply()},appLanguage,{appLanguage=it;p.edit().putString("app_language",it).apply()}){grade=-1;p.edit().putInt("grade",-1).apply();page="pick"}}};AnimatedVisibility(toast.isNotEmpty(),enter=slideInVertically{it}+fadeIn(),exit=fadeOut(),modifier=Modifier.align(Alignment.BottomCenter).padding(8.dp)){Surface(shape=RoundedCornerShape(18.dp),tonalElevation=8.dp){AppText(toast,Modifier.padding(14.dp),fontWeight=FontWeight.Bold)}}}}
+  if(page=="auth"){StudentLogin{page=if(grade<0)"pick" else "home"};return@MaterialTheme}\n  if(page=="pick"){Pick(grade,appLanguage,{appLanguage=it;p.edit().putString("app_language",it).apply()},studentName,{studentName=it;p.edit().putString("student_name",it).apply()}){grade=it;p.edit().putInt("grade",it).apply();page="home"};return@MaterialTheme}
+  Scaffold(topBar={CenterAlignedTopAppBar(title={AppText("StudyPilot AI",fontWeight=FontWeight.Black)})},bottomBar={NavigationBar{listOf("home" to "⌂","learn" to "▣","quiz" to "✓","tutor" to "✦","library" to "▤","profile" to "●","student_info" to "◎").forEach{(k,ic)->NavigationBarItem(page==k,{page=k},icon={AppText(ic)},label={AppText(if(k=="tutor")"StudyPilot AI" else if(k=="student_info")"My Info" else k.replaceFirstChar{it.uppercase()})})}}}){pad->Box(Modifier.fillMaxSize().padding(pad)){AnimatedContent(page,label="page"){s->when(s){"home"->Home(grade,xp,correct,tried,tasks.count{!it.done},notes.size){page=it};"learn"->Learn(grade){page="quiz"};"quiz"->Quiz(grade,appLanguage,studentName,::record){toast=it};"library"->Library(grade,notes,tasks,::saveNotes,::saveTasks);"tutor"->StudyPilotAIPage(grade,appLanguage,studentName);"student_info"->StudentInfoPage(studentName,grade,appLanguage,{studentName=it;p.edit().putString("student_name",it).apply()},{appLanguage=it;p.edit().putString("app_language",it).apply()},{StudentAuth.logout(context);page="auth"});"profile"->Profile(grade,xp,correct,tried,studentName,{studentName=it;p.edit().putString("student_name",it).apply()},dark,{dark=it;p.edit().putBoolean("dark",it).apply()},appLanguage,{appLanguage=it;p.edit().putString("app_language",it).apply()}){grade=-1;p.edit().putInt("grade",-1).apply();page="pick"}}};AnimatedVisibility(toast.isNotEmpty(),enter=slideInVertically{it}+fadeIn(),exit=fadeOut(),modifier=Modifier.align(Alignment.BottomCenter).padding(8.dp)){Surface(shape=RoundedCornerShape(18.dp),tonalElevation=8.dp){AppText(toast,Modifier.padding(14.dp),fontWeight=FontWeight.Bold)}}}}
  }
 }
 
@@ -74,7 +74,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var questions by remember{mutableStateOf(emptyList<M>())}
  var generating by remember{mutableStateOf(false)}
  var generationError by remember{mutableStateOf("")}
- var fromGrade by remember(g){mutableIntStateOf(if(g in 1..9)g else 1)}
+ var fromGrade by remember(g){mutableIntStateOf(if(g in 1..8)g else 8)}
   val maxG=if(g<0)9 else g
  LaunchedEffect(start,sub,diff,size,seed,g,fromGrade,studentName,appLanguage){if(start){generating=true;generationError="";try{questions=withContext(Dispatchers.IO){generateAiQuiz(g,fromGrade,sub,diff,size,studentName,appLanguage)}}catch(e:Exception){generationError=e.message ?: "AI question generation failed. Check the Supabase AI backend and retry."}finally{generating=false}}}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
@@ -84,7 +84,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   Spacer(Modifier.height(12.dp));AppText("Subject",fontWeight=FontWeight.Black)
   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){subs.forEach{(n,_)->FilterChip(sub==n,{sub=n},label={AppText(n)})}}
   Spacer(Modifier.height(10.dp));Row{listOf("Mixed","Easy","Medium","Hard").forEach{FilterChip(diff==it,{diff=it},label={AppText(it)},modifier=Modifier.padding(end=4.dp))}}
-  Spacer(Modifier.height(10.dp));Row(Modifier.horizontalScroll(rememberScrollState())){listOf(10,20,30,50,100).forEach{FilterChip(size==it,{size=it},label={AppText("$it")},modifier=Modifier.padding(end=4.dp))}}
+  Spacer(Modifier.height(10.dp));Row(Modifier.horizontalScroll(rememberScrollState())){listOf(10,20,30,50,100,500).forEach{FilterChip(size==it,{size=it},label={AppText("$it")},modifier=Modifier.padding(end=4.dp))}}
   Spacer(Modifier.height(16.dp));BigCard(palette[0],"🎮 READY","Practice MCQs • AI explanation • speaker support"){start=true}
  };return}
  if(generating){Column(Modifier.fillMaxSize().padding(24.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){CircularProgressIndicator();Spacer(Modifier.height(12.dp));AppText("StudyPilot AI is creating questions for ${studentName.ifBlank{"you"}}…",fontWeight=FontWeight.Bold);AppText("Class $g • $sub • $diff",color=MaterialTheme.colorScheme.onSurfaceVariant)}}else if(generationError.isNotBlank()){Column(Modifier.fillMaxSize().padding(20.dp),verticalArrangement=Arrangement.Center){AppText("Could not generate your quiz",fontWeight=FontWeight.Black);AppText(generationError,color=MaterialTheme.colorScheme.error);Button({start=false;generationError=""}){AppText("BACK TO QUIZ SETTINGS")};Button({seed++;generationError="";start=true}){AppText("RETRY AI GENERATION")}};return}else if(questions.isNotEmpty()&&at>=questions.size){Column(Modifier.fillMaxSize().padding(20.dp),horizontalAlignment=Alignment.CenterHorizontally){
@@ -100,20 +100,20 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   AppText("Class ${q.grade} • ${q.subject} • ${q.diff} • ${q.topic}",color=MaterialTheme.colorScheme.primary,fontSize=12.sp,fontWeight=FontWeight.Bold)
   Card(Modifier.fillMaxWidth().padding(vertical=10.dp),shape=RoundedCornerShape(25.dp)){AppText(q.q,Modifier.padding(21.dp),fontSize=19.sp,fontWeight=FontWeight.Black)}
   q.opts.forEachIndexed{i,o->
-   val bad=pick==i&&i!=q.ans
-   Card(onClick={if(pick<0){pick=i;record(i==q.ans);if(i==q.ans)score++;toast(if(i==q.ans)"Correct! 🎉" else "Review explanation 📘")}},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=if(bad)Color(0xFFE83E8C).copy(.16f)else MaterialTheme.colorScheme.surfaceVariant)){
-    Row(Modifier.padding(15.dp)){AppText("${'A'+i}",fontWeight=FontWeight.Black,color=if(bad)Color(0xFFE83E8C)else MaterialTheme.colorScheme.primary);Spacer(Modifier.width(12.dp));AppText(o,fontWeight=FontWeight.SemiBold)}
+   val bad=pick==i&&i!=q.ans;val good=pick>=0&&i==q.ans
+   Card(onClick={if(pick<0){pick=i;record(i==q.ans);if(i==q.ans)score++;toast(if(i==q.ans)"Correct! 🎉" else "Review explanation 📘")}},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=if(good)Color(0xFF16A34A).copy(.18f)else if(bad)Color(0xFFDC2626).copy(.18f)else MaterialTheme.colorScheme.surfaceVariant)){
+    Row(Modifier.padding(15.dp)){AppText("${'A'+i}",fontWeight=FontWeight.Black,color=if(good)Color(0xFF16A34A)else if(bad)Color(0xFFDC2626)else MaterialTheme.colorScheme.primary);Spacer(Modifier.width(12.dp));AppText(o,fontWeight=FontWeight.SemiBold)}
    }
   }
   if(pick>=0){
    Card(Modifier.fillMaxWidth().padding(top=8.dp),shape=RoundedCornerShape(19.dp)){Column(Modifier.padding(15.dp)){
     AppText(if(pick==q.ans)"✓ Correct" else "✕ Review",fontWeight=FontWeight.Black)
     AppText(if(pick==q.ans) "Correct — use StudyPilot AI to learn why." else "Review with StudyPilot AI to understand the mistake.",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-    AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=q.opts[pick],appLanguage=appLanguage,megaTest=false,revealUses=revealUses,onReveal={if(size==2500&&revealUses<10)revealUses++})
+    AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=q.opts[pick],appLanguage=appLanguage,megaTest=false,revealUses=revealUses,onReveal={revealUses++})
     Spacer(Modifier.height(8.dp));Button({at++;pick=-1},modifier=Modifier.fillMaxWidth()){AppText(if(at==size-1)"FINISH" else "NEXT QUESTION →")}
    }}
   } else {
-   AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=null,appLanguage=appLanguage,megaTest=size==2500,revealUses=revealUses,onReveal={if(size==2500&&revealUses<10)revealUses++})
+   AiQuestionTools(question=q.q,options=q.opts,correctAnswer=q.opts[q.ans],selectedAnswer=null,appLanguage=appLanguage,megaTest=false,revealUses=revealUses,onReveal={revealUses++})
   }
  }
 }
