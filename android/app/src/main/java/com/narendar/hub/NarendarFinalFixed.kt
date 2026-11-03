@@ -76,7 +76,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var generationError by remember{mutableStateOf("")}
  var fromGrade by remember(g){mutableIntStateOf(if(g in 1..9)g else 1)}
   val maxG=if(g<0)9 else g
- LaunchedEffect(start,sub,diff,size,seed,g,fromGrade,studentName,appLanguage){if(start){generating=true;generationError="";try{questions=withContext(Dispatchers.IO){generateAiQuiz(g,fromGrade,sub,diff,size,studentName,appLanguage)}}catch(e:Exception){generationError=e.message ?: "AI question generation failed. Check the Firebase backend and retry."}finally{generating=false}}}
+ LaunchedEffect(start,sub,diff,size,seed,g,fromGrade,studentName,appLanguage){if(start){generating=true;generationError="";try{questions=withContext(Dispatchers.IO){generateAiQuiz(g,fromGrade,sub,diff,size,studentName,appLanguage)}}catch(e:Exception){generationError=e.message ?: "AI question generation failed. Check the Supabase AI backend and retry."}finally{generating=false}}}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
   AppText("Quiz Arena",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
    if(g>0){AppText("Question class range",fontWeight=FontWeight.Black);Row(Modifier.horizontalScroll(rememberScrollState())){(1..g).forEach{from->FilterChip(fromGrade==from,{fromGrade=from},label={AppText("Class $from–$g")},modifier=Modifier.padding(end=4.dp))}}}
@@ -252,7 +252,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 
 
 private fun generateAiQuiz(maxGrade:Int,fromGrade:Int,subject:String,difficulty:String,count:Int,studentName:String,language:String):List<M>{
-    if(!AiConfig.isConfigured()) throw IllegalStateException("StudyPilot Firebase AI backend is not configured. Please retry after backend deployment is complete.")
+    if(!AiConfig.isConfigured()) throw IllegalStateException("StudyPilot Supabase AI backend is not configured. Please retry after backend deployment is complete.")
     val grade=if(maxGrade in 1..9) fromGrade.coerceIn(1,maxGrade) else fromGrade.coerceIn(1,9)
     val all=ArrayList<M>()
     val seen=HashSet<String>()
@@ -270,14 +270,13 @@ private fun generateAiQuiz(maxGrade:Int,fromGrade:Int,subject:String,difficulty:
             setRequestProperty("Content-Type","application/json; charset=utf-8")
             setRequestProperty("Accept","application/json")
             setRequestProperty("apikey",AiConfig.SUPABASE_PUBLISHABLE_KEY)
-            setRequestProperty("Authorization","Bearer "+AiConfig.SUPABASE_PUBLISHABLE_KEY)
         }
         try{
             connection.outputStream.use{it.write(body.toString().toByteArray(Charsets.UTF_8))}
             val code=connection.responseCode
             val stream=if(code in 200..299)connection.inputStream else connection.errorStream
             val raw=stream?.bufferedReader(Charsets.UTF_8)?.use{it.readText()}.orEmpty()
-            val json=try{JSONObject(raw.ifBlank{"{}"})}catch(_:Exception){val html=raw.trimStart().startsWith("<")||connection.contentType?.contains("html",true)==true;if(html)throw IllegalStateException("Firebase AI backend is not deployed or returned an HTML error (HTTP $code). Retry after backend deployment.");throw IllegalStateException("AI server returned an unreadable response (HTTP $code). Please retry.")}
+            val json=try{JSONObject(raw.ifBlank{"{}"})}catch(_:Exception){val html=raw.trimStart().startsWith("<")||connection.contentType?.contains("html",true)==true;if(html)throw IllegalStateException("Supabase AI backend is not deployed or returned an HTML error (HTTP $code). Retry after backend deployment.");throw IllegalStateException("AI server returned an unreadable response (HTTP $code). Please retry.")}
             if(code !in 200..299)throw IllegalStateException(json.optString("error","AI service returned HTTP $code"))
             val arr=json.optJSONArray("questions")?:throw IllegalStateException("AI returned no questions.")
             for(i in 0 until arr.length()){
