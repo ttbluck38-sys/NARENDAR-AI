@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.FontWeight
@@ -53,7 +54,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
 }
 
  }
-@Composable private fun Pick(g:Int,language:String,setLanguage:(String)->Unit,studentName:String,setStudentName:(String)->Unit,choose:(Int)->Unit){val pulse=rememberInfiniteTransition(label="p").animateFloat(1f,1.06f,infiniteRepeatable(tween(1100),RepeatMode.Reverse),label="p").value;Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF111827),Color(0xFF312E81),Color(0xFF0F766E)))).verticalScroll(rememberScrollState())){Column(Modifier.padding(22.dp),horizontalAlignment=Alignment.CenterHorizontally){Spacer(Modifier.height(25.dp));Surface(shape=CircleShape,color=Color.White.copy(.13f),modifier=Modifier.size(100.dp).scale(pulse)){Box(contentAlignment=Alignment.Center){AppText("N",color=Color.White,fontSize=48.sp,fontWeight=FontWeight.Black)}};AppText("STUDYPILOT AI",color=Color.White,fontSize=29.sp,fontWeight=FontWeight.Black);AppText("Learn • Practice • Master",color=Color.White.copy(.7f));Spacer(Modifier.height(22.dp));AppText("Welcome to StudyPilot AI",color=Color.White,fontSize=21.sp,fontWeight=FontWeight.Black);OutlinedTextField(value=studentName,onValueChange=setStudentName,label={AppText("Student name")},singleLine=true,modifier=Modifier.fillMaxWidth());LanguagePicker(language,setLanguage);AppText("Class 8 includes Class 1–8 learning.",color=Color.White.copy(.65f));Spacer(Modifier.height(10.dp));listOf(-1 to "🌎 All Classes",1 to "🎒 Class 1",2 to "🎒 Class 2",3 to "🎒 Class 3",4 to "🎒 Class 4",5 to "🎒 Class 5",6 to "🎒 Class 6",7 to "🎒 Class 7",8 to "🚀 Class 8",9 to "🏆 Class 9+").forEach{(v,t)->Card(onClick={choose(v)},modifier=Modifier.fillMaxWidth().padding(4.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=Color.White.copy(.11f))){Row(Modifier.padding(16.dp)){AppText(t,color=Color.White,fontWeight=FontWeight.Bold);Spacer(Modifier.weight(1f));AppText(if(g==v)"✓" else "›",color=Color.White,fontSize=22.sp)}}};AppText("Generated practice set • curriculum review pending",color=Color.White.copy(.55f),fontSize=12.sp,modifier=Modifier.padding(top=10.dp))}}}
+@Composable private fun Pick(g:Int,language:String,setLanguage:(String)->Unit,studentName:String,setStudentName:(String)->Unit,choose:(Int)->Unit){val pulse=rememberInfiniteTransition(label="p").animateFloat(1f,1.06f,infiniteRepeatable(tween(1100),RepeatMode.Reverse),label="p").value;Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF111827),Color(0xFF312E81),Color(0xFF0F766E)))).verticalScroll(rememberScrollState())){Column(Modifier.padding(22.dp),horizontalAlignment=Alignment.CenterHorizontally){Spacer(Modifier.height(25.dp));Surface(shape=CircleShape,color=Color.White.copy(.13f),modifier=Modifier.size(100.dp).scale(pulse)){Box(contentAlignment=Alignment.Center){Image(painter=painterResource(R.drawable.studypilot_logo),contentDescription="StudyPilot AI logo",modifier=Modifier.fillMaxSize().padding(8.dp))}};AppText("STUDYPILOT AI",color=Color.White,fontSize=29.sp,fontWeight=FontWeight.Black);AppText("Learn • Practice • Master",color=Color.White.copy(.7f));Spacer(Modifier.height(22.dp));AppText("Welcome to StudyPilot AI",color=Color.White,fontSize=21.sp,fontWeight=FontWeight.Black);OutlinedTextField(value=studentName,onValueChange=setStudentName,label={AppText("Student name")},singleLine=true,modifier=Modifier.fillMaxWidth());LanguagePicker(language,setLanguage);AppText("Class 8 includes Class 1–8 learning.",color=Color.White.copy(.65f));Spacer(Modifier.height(10.dp));listOf(-1 to "🌎 All Classes",1 to "🎒 Class 1",2 to "🎒 Class 2",3 to "🎒 Class 3",4 to "🎒 Class 4",5 to "🎒 Class 5",6 to "🎒 Class 6",7 to "🎒 Class 7",8 to "🚀 Class 8",9 to "🏆 Class 9+").forEach{(v,t)->Card(onClick={choose(v)},modifier=Modifier.fillMaxWidth().padding(4.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=Color.White.copy(.11f))){Row(Modifier.padding(16.dp)){AppText(t,color=Color.White,fontWeight=FontWeight.Bold);Spacer(Modifier.weight(1f));AppText(if(g==v)"✓" else "›",color=Color.White,fontSize=22.sp)}}};AppText("Generated practice set • curriculum review pending",color=Color.White.copy(.55f),fontSize=12.sp,modifier=Modifier.padding(top=10.dp))}}}
 
 @Composable private fun Home(g:Int,xp:Int,ok:Int,tried:Int,tasks:Int,notes:Int,nav:(String)->Unit){val acc=if(tried==0)0 else ok*100/tried;val pulse=rememberInfiniteTransition(label="hero").animateFloat(.97f,1f,infiniteRepeatable(tween(1400),RepeatMode.Reverse),label="hero").value;LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){item{AppText("Welcome back 👋",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);AppText(if(g<0)"All Classes" else "Class $g",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)};item{Card(Modifier.fillMaxWidth().scale(pulse),shape=RoundedCornerShape(30.dp)){Box(Modifier.background(Brush.linearGradient(listOf(palette[(xp/100)%5],palette[(xp/100+2)%5])))){Column(Modifier.padding(22.dp)){AppText("LEVEL ${xp/500+1} • $xp XP",color=Color.White.copy(.8f),fontWeight=FontWeight.Bold);AppText("Your learning journey",color=Color.White,fontSize=27.sp,fontWeight=FontWeight.Black);Spacer(Modifier.height(12.dp));LinearProgressIndicator({(xp%500)/500f},Modifier.fillMaxWidth().height(9.dp),color=Color.White,trackColor=Color.White.copy(.2f));Spacer(Modifier.height(9.dp));AppText("🎯 $acc% accuracy   📚 $tried attempts",color=Color.White,fontWeight=FontWeight.Bold)}}}};item{AppText("Explore",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)};item{Action("🎮","Quiz Arena","Practice MCQs • Easy / Medium / Hard",palette[0]){nav("quiz")}};item{Action("📚","Study Library","Subjects + explanations",palette[1]){nav("learn")}};item{Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Stat("Questions",tried.toString(),palette[2],Modifier.weight(1f));Stat("Notes",notes.toString(),palette[3],Modifier.weight(1f));Stat("Tasks",tasks.toString(),palette[4],Modifier.weight(1f))}};item{Action("🃏","Revision Hub","Notes + planner",palette[2]){nav("library")}};item{Action("🏆","Stats + Settings","XP + theme",palette[3]){nav("profile")}}}}
 @Composable private fun Action(ic:String,title:String,sub:String,c:Color,go:()->Unit){Card(Modifier.fillMaxWidth().clickable{go()},shape=RoundedCornerShape(22.dp)){Row(Modifier.padding(17.dp),verticalAlignment=Alignment.CenterVertically){Surface(shape=CircleShape,color=c.copy(.13f),modifier=Modifier.size(50.dp)){Box(contentAlignment=Alignment.Center){AppText(ic,fontSize=25.sp)}};Spacer(Modifier.width(13.dp));Column(Modifier.weight(1f)){AppText(title,fontWeight=FontWeight.Black);AppText(sub,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)};AppText("›",fontSize=28.sp,color=c)}}}
@@ -80,8 +81,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  LaunchedEffect(start,sub,diff,size,seed,g,fromGrade,studentName,appLanguage){if(start){generating=true;generationError="";try{questions=withContext(Dispatchers.IO){generateAiQuiz(g,fromGrade,sub,diff,size,studentName,appLanguage)}}catch(e:Exception){generationError=e.message ?: "AI question generation failed. Check the Supabase AI backend and retry."}finally{generating=false}}}
  if(!start){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
   AppText("Quiz Arena",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
-   if(g>0){AppText("Question class range",fontWeight=FontWeight.Black);Row(Modifier.horizontalScroll(rememberScrollState())){(1..g).forEach{from->FilterChip(fromGrade==from,{fromGrade=from},label={AppText("Class $from–$g")},modifier=Modifier.padding(end=4.dp))}}}
-  AppText("Fresh AI-generated questions tailored to the student profile, class, subject and difficulty.",color=MaterialTheme.colorScheme.onSurfaceVariant)
+     AppText("Fresh AI-generated questions tailored to the student profile, class, subject and difficulty.",color=MaterialTheme.colorScheme.onSurfaceVariant)
   Spacer(Modifier.height(12.dp));AppText("Subject",fontWeight=FontWeight.Black)
   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){subs.forEach{(n,_)->FilterChip(sub==n,{sub=n},label={AppText(n)})}}
   Spacer(Modifier.height(10.dp));Row{listOf("Mixed","Easy","Medium","Hard").forEach{FilterChip(diff==it,{diff=it},label={AppText(it)},modifier=Modifier.padding(end=4.dp))}}
@@ -302,90 +302,3 @@ private fun loadTasks(p:android.content.SharedPreferences):List<Task>{return try
 private fun notesJson(v:List<Note>)=JSONArray().apply{v.forEach{put(JSONObject().apply{put("id",it.id);put("title",it.title);put("body",it.body)})}}.toString()
 private fun tasksJson(v:List<Task>)=JSONArray().apply{v.forEach{put(JSONObject().apply{put("id",it.id);put("text",it.text);put("done",it.done)})}}.toString()
 
-
-private data class TutorMessage(val id: Long, val fromUser: Boolean, val text: String, val topic: String = "")
-
-@Composable
-private fun Tutor(grade: Int, appLanguage: String) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var searching by remember { mutableStateOf(false) }
-    var googleQuery by remember { mutableStateOf("") }
-    var input by remember { mutableStateOf("") }
-    var history by remember {
-        mutableStateOf(listOf(TutorMessage(1L, false,
-            "Hi! I'm StudyPilot's offline tutor preview. Try: 'what is photosynthesis' or 'what is fotosinthesis'. I currently support a limited set of reviewed topics.")))
-    }
-    Column(Modifier.fillMaxSize().padding(14.dp)) {
-        AppText("StudyPilot Tutor", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
-        AppText("Offline preview • typo-tolerant • no API key", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-        Spacer(Modifier.height(8.dp))
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
-            AppText("This first version answers from a small curated knowledge set. The separately trained Transformer is experimental and is not connected to this chat yet.",
-                Modifier.padding(12.dp), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Spacer(Modifier.height(8.dp))
-        LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(history, key = { it.id }) { item ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = if (item.fromUser) Arrangement.End else Arrangement.Start) {
-                    Card(Modifier.widthIn(max = 320.dp), shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(containerColor = if (item.fromUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
-                        Column(Modifier.padding(12.dp)) {
-                            AppText(if (item.fromUser) "You" else if (item.topic.isNotBlank()) item.topic else "StudyPilot", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                            Spacer(Modifier.height(3.dp))
-                            AppText(item.text, fontSize = 14.sp)
-                        }
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        OutlinedTextField(value = input, onValueChange = { input = it },
-            modifier = Modifier.fillMaxWidth(), label = { AppText("Ask a study question") },
-            placeholder = { AppText("e.g. what is fotosinthesis") }, maxLines = 3)
-        Spacer(Modifier.height(6.dp))
-        Button(onClick = {
-            val question = input.trim()
-            if (question.isNotEmpty() && !searching) {
-                input = ""
-                googleQuery = ""
-                searching = true
-                val pendingId = System.currentTimeMillis() + 1
-                history = history + TutorMessage(System.currentTimeMillis(), true, question) +
-                    TutorMessage(pendingId, false, translateAppText("Searching the web…", appLanguage), "StudyPilot")
-                scope.launch {
-                    try {
-                        val answer = withContext(Dispatchers.Default) {
-                            StudyPilotAIEngine.ask(question, classLevel = if (grade in 1..12) grade else null, preferredLanguage = appLanguage)
-                        }
-                        var answerText = answer.text
-                        var answerTopic = answer.topic
-                        if (answer.confidence < 0.43 || answer.needsClarification) {
-                            val web = StudyPilotWebSearch.search(question, appLanguage)
-                            if (web != null) {
-                                val translated = if (appLanguage == "English") web.extract else StudyPilotWebSearch.translateForLanguage(web.extract, appLanguage)
-                                if (!translated.isNullOrBlank()) {
-                                    answerText = translated
-                                    answerTopic = web.title + " • Wikipedia"
-                                } else {
-                                    googleQuery = question
-                                    answerText = translateAppText("I found a source, but could not translate it reliably. Open Google results below.", appLanguage)
-                                }
-                            } else {
-                                googleQuery = question
-                                answerText = translateAppText("I don't know this yet from my offline knowledge. Open Google results below for current information.", appLanguage)
-                            }
-                        }
-                        history = history.dropLast(1) + TutorMessage(System.currentTimeMillis() + 2, false, answerText, answerTopic)
-                    } catch (e: Exception) {
-                        googleQuery = question
-                        history = history.dropLast(1) + TutorMessage(System.currentTimeMillis() + 2, false, translateAppText("Search failed. Check your internet and use Google results below.", appLanguage))
-                    } finally { searching = false }
-                }
-            }
-        }, enabled = !searching, modifier = Modifier.fillMaxWidth()) {
-            AppText(if (searching) "Searching trusted sources…" else "ASK STUDYPILOT")
-        }
-        if (googleQuery.isNotBlank()) OutlinedButton(onClick = { StudyPilotWebSearch.openGoogle(context, googleQuery) }, modifier = Modifier.fillMaxWidth()) { AppText("Search Google") }
-    }
-}
