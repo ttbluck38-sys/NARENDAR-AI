@@ -87,7 +87,7 @@ internal fun AiQuestionTools(
                 }
             }, modifier = Modifier.fillMaxWidth()) { AppText("🔊 Read question + all options") }
 
-            OutlinedButton(onClick = { if (!megaTest || revealUses < 10) { onReveal(); explanation = "Correct answer: $correctAnswer"; error = "" } else error = "All 10 answer reveals have been used for this mega test." }, enabled = !megaTest || revealUses < 10, modifier = Modifier.fillMaxWidth()) { AppText(if (megaTest) "Show Correct Answer (${10 - revealUses} left)" else "Show Correct Answer") }
+            OutlinedButton(onClick = { onReveal(); StudentAuth.logEvent(context,"answer_reveal","MCQ","",question,selectedAnswer.orEmpty(),correctAnswer,null); explanation = "Correct answer: $correctAnswer"; error = "" }, enabled = true, modifier = Modifier.fillMaxWidth()) { AppText("Show Correct Answer") }
 
             Button(onClick = {
                 loading = true; error = ""; explanation = ""; sourceUrl = ""; googleQuery = ""
