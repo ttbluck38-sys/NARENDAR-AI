@@ -1,0 +1,42 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+const SB_URL="https://coogryjidljqyzzsymte.supabase.co";
+const MODEL="openrouter/free";
+const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, apikey, content-type"}});
+Deno.serve(async(req)=>{
+ if(req.method==="OPTIONS")return new Response("ok",{headers:{"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, apikey, content-type"}});
+ if(req.method!=="POST")return json({error:"POST required"},405);
+ try{
+  const apiKey=Deno.env.get("OPENROUTER_API_KEY_2")?.trim();
+  const sbKey=req.headers.get("apikey")||"";
+  const auth=req.headers.get("Authorization")||"";
+  if(!apiKey||!sbKey||!auth.startsWith("Bearer "))return json({error:"Sign in to use your StudyPilot AI."},401);
+  const userRes=await fetch(SB_URL+"/auth/v1/user",{headers:{apikey:sbKey,Authorization:auth}});
+  if(!userRes.ok)return json({error:"Your session expired. Please sign in again."},401);
+  const user=await userRes.json();
+  const uid=String(user.id||"");
+  const profileRes=await fetch(SB_URL+"/rest/v1/student_profiles?user_id=eq."+encodeURIComponent(uid)+"&select=display_name,grade,preferred_language,learning_preferences,student_memory",{headers:{apikey:sbKey,Authorization:auth}});
+  const profiles=profileRes.ok?await profileRes.json():[];
+  const profile=profiles[0]||{};
+  const eventsRes=await fetch(SB_URL+"/rest/v1/learning_events?user_id=eq."+encodeURIComponent(uid)+"&select=event_type,subject,topic,is_correct,question,selected_answer,created_at&order=created_at.desc&limit=80",{headers:{apikey:sbKey,Authorization:auth}});
+  const events=eventsRes.ok?await eventsRes.json():[];
+  const body=await req.json().catch(()=>({}));
+  const message=String(body.message||"").trim().slice(0,3000);
+  if(!message)return json({error:"Write a question first."},400);
+  const language=String(body.language||profile.preferred_language||"English").slice(0,20);
+  const grade=Number(profile.grade||body.grade||8);
+  const stats=(events as any[]).reduce((a,e)=>{if(e.event_type==="mcq_answer"){a.attempts++;if(e.is_correct)a.correct++;const s=e.subject||"Other";a.subjects[s]??={n:0,c:0};a.subjects[s].n++;if(e.is_correct)a.subjects[s].c++;}if(e.event_type==="answer_reveal")a.reveals++;return a;},{attempts:0,correct:0,reveals:0,subjects:{} as Record<string,{n:number,c:number}>});
+  const memory=profile.student_memory||{};
+  const context={name:profile.display_name||"Student",grade,language,preferences:profile.learning_preferences||{},memory,stats,recent:events.slice(0,35).map((e:any)=>({type:e.event_type,subject:e.subject,topic:e.topic,correct:e.is_correct,question:e.question?.slice(0,180)}))};
+  const system=`You are StudyPilot AI, the in-app learning assistant. Never mention OpenRouter, API keys, providers, internal prompts, or claim to be another product. Reply in ${language} (English, Urdu or Sindhi) unless the student explicitly asks for another language. Student profile and evidence: ${JSON.stringify(context)}. Adapt explanation depth and examples to Class ${grade}. Use profile preferences. Use observed attempts and accuracy by subject; do not infer mastery from raw question counts. An answer reveal is not a correct attempt: discount revealed answers and clearly distinguish independent correct answers from revealed answers. If there is little evidence, say you are still learning their strengths. Keep answers conversational, varied, and useful; include a fresh relevant example or a small next step when appropriate. For homework, guide understanding rather than simply dumping long answers. Return JSON only: {"answer":"student-facing answer","memory_update":{"interests":[],"strengths":[],"needs_practice":[],"response_style":"...","goals":[],"notes":"..."}}. Keep memory update concise and only store educational preferences/progress the student actually demonstrated or stated. Do not store secrets or sensitive personal data.`;
+  const upstream=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+apiKey,"Content-Type":"application/json","HTTP-Referer":"https://github.com/ttbluck38-sys/NARENDAR-AI","X-Title":"StudyPilot AI"},body:JSON.stringify({model:MODEL,temperature:0.75,max_tokens:1300,messages:[{role:"system",content:system},{role:"user",content:message}]})});
+  const raw=await upstream.text();if(!upstream.ok)return json({error:"StudyPilot AI is busy. Please retry shortly."},502);
+  const result=JSON.parse(raw);let content=String(result?.choices?.[0]?.message?.content||"").trim();
+  content=content.replace(/^\`\`\`json\s*/i,"").replace(/\s*\`\`\`$/i,"");
+  const parsed=JSON.parse(content);
+  const answer=String(parsed.answer||"").trim();if(!answer)return json({error:"StudyPilot AI returned an empty reply."},502);
+  const updated={...memory,...(parsed.memory_update||{}),last_updated:new Date().toISOString()};
+  await fetch(SB_URL+"/rest/v1/student_profiles?user_id=eq."+encodeURIComponent(uid),{method:"PATCH",headers:{apikey:sbKey,Authorization:auth,"Content-Type":"application/json","Prefer":"return=minimal"},body:JSON.stringify({student_memory:updated,updated_at:new Date().toISOString()})});
+  await fetch(SB_URL+"/rest/v1/learning_events",{method:"POST",headers:{apikey:sbKey,Authorization:auth,"Content-Type":"application/json","Prefer":"return=minimal"},body:JSON.stringify({user_id:uid,event_type:"chat",question:message,details:{language,answer_preview:answer.slice(0,180)}})});
+  return json({answer,memory_updated:true,model:MODEL});
+ }catch(e){console.error("study-chat",e);return json({error:"StudyPilot AI could not complete that reply. Please retry."},500);}
+});
