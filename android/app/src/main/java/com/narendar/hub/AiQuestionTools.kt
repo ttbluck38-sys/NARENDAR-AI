@@ -217,8 +217,8 @@ private fun requestExplanation(
         readTimeout = 30000
         doOutput = true
         setRequestProperty("Content-Type", "application/json; charset=utf-8")
+        // Supabase publishable keys belong in the apikey header. They are not JWTs.
         setRequestProperty("apikey", AiConfig.SUPABASE_PUBLISHABLE_KEY)
-        setRequestProperty("Authorization", "Bearer ${AiConfig.SUPABASE_PUBLISHABLE_KEY}")
     }
     try {
         connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
