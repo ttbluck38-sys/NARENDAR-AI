@@ -63,6 +63,6 @@ private data class ChatLine(val mine:Boolean,val text:String)
 private fun requestStudyPilotChat(context:android.content.Context,message:String,grade:Int,language:String):String{
  val url=AiConfig.SUPABASE_URL.trimEnd()+"/functions/v1/study-chat"
  val body=JSONObject().put("message",message).put("grade",grade).put("language",language)
- val conn=(URL(url).openConnection() as HttpURLConnection).apply{requestMethod="POST";connectTimeout=20000;readTimeout=60000;doOutput=true;setRequestProperty("Content-Type","application/json");setRequestProperty("apikey",AiConfig.SUPABASE_PUBLISHABLE_KEY);setRequestProperty("Authorization","Bearer "+StudentAuth.token(context))}
+ val conn=(URL(url).openConnection() as HttpURLConnection).apply{requestMethod="POST";connectTimeout=20000;readTimeout=90000;doOutput=true;setRequestProperty("Content-Type","application/json");setRequestProperty("apikey",AiConfig.SUPABASE_PUBLISHABLE_KEY);setRequestProperty("Authorization","Bearer "+StudentAuth.requireAccessToken(context))}
  try{conn.outputStream.use{it.write(body.toString().toByteArray(Charsets.UTF_8))};val code=conn.responseCode;val raw=(if(code in 200..299)conn.inputStream else conn.errorStream)?.bufferedReader()?.use{it.readText()}.orEmpty();val j=JSONObject(raw.ifBlank{"{}"});if(code !in 200..299)throw IllegalStateException(j.optString("error","StudyPilot AI request failed ($code)."));return j.optString("answer").takeIf{it.isNotBlank()}?:throw IllegalStateException("No answer returned.")}finally{conn.disconnect()}
 }
