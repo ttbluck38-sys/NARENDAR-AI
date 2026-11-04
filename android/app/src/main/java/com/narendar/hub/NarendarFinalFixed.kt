@@ -46,14 +46,20 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
   if (page != "home" && page != "pick") page = "home" else showExitDialog = true
  }
  LaunchedEffect(Unit) {
-   val valid = withContext(Dispatchers.IO) { StudentAuth.restore(context) }
+   // Startup must remain usable even if an old saved token or network response is malformed.
+   val valid = try {
+    withContext(Dispatchers.IO) { StudentAuth.restore(context) }
+   } catch (_: Throwable) {
+    runCatching { StudentAuth.logout(context) }
+    false
+   }
    if (!valid) { page = "auth" }
    sessionReady = true
   }
  LaunchedEffect(toast){if(toast.isNotEmpty()){delay(1500);toast=""}}
  LaunchedEffect(grade, studentName, appLanguage, StudentAuth.token(context)) {
    if (StudentAuth.token(context).isNotBlank() && grade in 1..12) {
-    withContext(Dispatchers.IO) { runCatching { StudentAuth.saveProfile(context, studentName, grade, appLanguage) } }
+    withContext(Dispatchers.IO) { try { StudentAuth.saveProfile(context, studentName, grade, appLanguage) } catch (_: Throwable) { /* Profile sync must not crash the learning UI. */ } }
    }
   }
  androidx.compose.runtime.CompositionLocalProvider(LocalAppLanguage provides appLanguage) { MaterialTheme(colorScheme=if(dark)darkColorScheme(primary=Color(0xFF9AB8FF),secondary=Color(0xFF70E0BE),tertiary=Color(0xFFFF9DC7))else lightColorScheme(primary=palette[0],secondary=palette[2],tertiary=palette[4],surface=Color(0xFFF7F8FC))){
