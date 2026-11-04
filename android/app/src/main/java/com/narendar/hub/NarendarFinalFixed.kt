@@ -287,11 +287,11 @@ private fun generateAiQuiz(maxGrade:Int,fromGrade:Int,subject:String,difficulty:
             put("excludeQuestions",JSONArray(all.map{it.q}))
         }
         val connection=(java.net.URL(AiConfig.SUPABASE_URL.trimEnd()+"/functions/v1/study-generate-mcqs").openConnection() as java.net.HttpURLConnection).apply{
-            requestMethod="POST";connectTimeout=20000;readTimeout=65000;doOutput=true
+            requestMethod="POST";connectTimeout=20000;readTimeout=90000;doOutput=true
             setRequestProperty("Content-Type","application/json; charset=utf-8")
             setRequestProperty("Accept","application/json")
             setRequestProperty("apikey",AiConfig.SUPABASE_PUBLISHABLE_KEY)
-            if(StudentAuth.token(context).isNotBlank())setRequestProperty("Authorization","Bearer "+StudentAuth.token(context))
+            setRequestProperty("Authorization","Bearer "+StudentAuth.requireAccessToken(context))
         }
         try{
             connection.outputStream.use{it.write(body.toString().toByteArray(Charsets.UTF_8))}
