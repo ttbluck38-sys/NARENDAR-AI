@@ -20,6 +20,17 @@ internal object StudentAuth {
   runCatching { logout(c) }
   false
  }}
+ fun requireAccessToken(c:Context):String {
+  val p=prefs(c)
+  val current=p.getString("access_token","").orEmpty()
+  val expiry=p.getLong("expires_at",0L)
+  if(current.isNotBlank() && expiry>System.currentTimeMillis()/1000+90) return current
+  if(restore(c)) {
+   val refreshed=prefs(c).getString("access_token","").orEmpty()
+   if(refreshed.isNotBlank()) return refreshed
+  }
+  throw IllegalStateException("Your StudyPilot session is not active. Please sign in again.")
+ }
  fun logout(c:Context){prefs(c).edit().clear().apply()}
  fun signIn(c:Context,email:String,password:String)=authRequest(c,"/auth/v1/token?grant_type=password",JSONObject().put("email",email.trim()).put("password",password))
  fun signUp(c:Context,email:String,password:String,name:String)=authRequest(c,"/auth/v1/signup",JSONObject().put("email",email.trim()).put("password",password).put("data",JSONObject().put("display_name",name.trim())))
