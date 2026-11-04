@@ -12,7 +12,14 @@ internal object StudentAuth {
  fun token(c:Context)=prefs(c).getString("access_token","").orEmpty()
  fun userId(c:Context)=prefs(c).getString("user_id","").orEmpty()
  fun email(c:Context)=prefs(c).getString("email","").orEmpty()
- fun restore(c:Context):Boolean{val p=prefs(c);val refresh=p.getString("refresh_token","").orEmpty();if(refresh.isBlank())return false;if(p.getLong("expires_at",0L)>System.currentTimeMillis()/1000+120)return true;return try{authRequest(c,"/auth/v1/token?grant_type=refresh_token",JSONObject().put("refresh_token",refresh));true}catch(_:Exception){logout(c);false}}
+ fun restore(c:Context):Boolean{val p=prefs(c);val refresh=p.getString("refresh_token","").orEmpty();if(refresh.isBlank())return false;if(p.getLong("expires_at",0L)>System.currentTimeMillis()/1000+120)return true;return try {
+  authRequest(c,"/auth/v1/token?grant_type=refresh_token",JSONObject().put("refresh_token",refresh))
+  true
+ } catch (_: Throwable) {
+  // A stale or incompatible saved session must never prevent the app from opening.
+  runCatching { logout(c) }
+  false
+ }}
  fun logout(c:Context){prefs(c).edit().clear().apply()}
  fun signIn(c:Context,email:String,password:String)=authRequest(c,"/auth/v1/token?grant_type=password",JSONObject().put("email",email.trim()).put("password",password))
  fun signUp(c:Context,email:String,password:String,name:String)=authRequest(c,"/auth/v1/signup",JSONObject().put("email",email.trim()).put("password",password).put("data",JSONObject().put("display_name",name.trim())))
