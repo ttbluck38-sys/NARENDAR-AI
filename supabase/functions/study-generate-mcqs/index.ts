@@ -82,23 +82,33 @@ export default {
       const attempts = history.filter((e: any) => e.event_type === "mcq_answer");
       const independentCorrect = attempts.filter((e: any) => e.is_correct).length;
       const reveals = history.filter((e: any) => e.event_type === "answer_reveal").length;
-      body.studentName = profile.display_name || body.studentName || "Student";
-      body.grade = profile.grade || body.grade || 8;
-      body.language = profile.preferred_language || body.language || "English";
+      body.studentName = body.studentName || profile.display_name || "Student";
+      body.grade = body.grade || profile.grade || 8;
+      body.language = body.language || profile.preferred_language || "English";
       body.learningLevel = JSON.stringify({ preferences: profile.learning_preferences || {}, memory: profile.student_memory || {}, recent_attempts: attempts.length, independent_correct: independentCorrect, answer_reveals: reveals, recent_topics: history.slice(0, 25).map((e: any) => ({ subject: e.subject, topic: e.topic, type: e.event_type, correct: e.is_correct })) }).slice(0, 5000);
       const count = Math.max(1, Math.min(10, Number(body.count || 10)));
       const excluded = Array.isArray(body.excludeQuestions) ? body.excludeQuestions.map(normalize).filter(Boolean).slice(-100) : [];
       let lastError = "AI could not generate enough valid questions.";
-      for (let attempt = 0; attempt < 2; attempt++) {
+      const collected: any[] = [];
+      const excludedForRun = [...excluded];
+      for (let attempt = 0; attempt < 4 && collected.length < count; attempt++) {
         try {
-          const questions = await requestBatch(body, count, excluded, apiKey);
-          if (questions.length >= count) return Response.json({ questions, model: MODEL });
-          lastError = `AI returned only ${questions.length} valid unique questions out of ${count}.`;
+          const needed = count - collected.length;
+          const batch = await requestBatch(body, needed, excludedForRun, apiKey);
+          for (const question of batch) {
+            const key = normalize((question as any).question);
+            if (!key || excludedForRun.includes(key)) continue;
+            collected.push(question);
+            excludedForRun.push(key);
+            if (collected.length >= count) break;
+          }
+          if (batch.length === 0) lastError = "AI returned no valid unique questions.";
         } catch (error) {
           lastError = error instanceof Error ? error.message : "AI request failed.";
         }
       }
-      return Response.json({ error: `${lastError} Please retry.` }, { status: 502 });
+      if (collected.length >= count) return Response.json({ questions: collected.slice(0, count), model: MODEL });
+      return Response.json({ error: `AI generated ${collected.length} of ${count} requested questions. ${lastError} Please retry.` }, { status: 502 });
     } catch (error) {
       console.error("[studypilot-mcq] request failed", error);
       return Response.json({ error: "StudyPilot AI request could not be completed." }, { status: 500 });
