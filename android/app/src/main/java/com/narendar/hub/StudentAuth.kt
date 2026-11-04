@@ -52,13 +52,13 @@ internal object StudentAuth {
   request(c,"/rest/v1/student_profiles?on_conflict=user_id","POST",body,"resolution=merge-duplicates,return=minimal")
  }
  fun logEvent(c:Context,type:String,subject:String,topic:String,question:String,selected:String="",correct:String="",isCorrect:Boolean?=null,details:JSONObject=JSONObject()){
-  if(token(c).isBlank())return
+  if(userId(c).isBlank())return
   val body=JSONObject().put("user_id",userId(c)).put("event_type",type).put("subject",subject).put("topic",topic).put("question",question).put("selected_answer",selected).put("correct_answer",correct).put("details",details)
   if(isCorrect!=null)body.put("is_correct",isCorrect)
   request(c,"/rest/v1/learning_events","POST",body,"return=minimal")
  }
  fun request(c:Context,path:String,method:String,body:JSONObject?,prefer:String?=null):String{
-  val conn=(URL(AiConfig.SUPABASE_URL+path).openConnection() as HttpURLConnection).apply{requestMethod=method;connectTimeout=15000;readTimeout=30000;doInput=true;setRequestProperty("Content-Type","application/json");setRequestProperty("apikey",AiConfig.SUPABASE_PUBLISHABLE_KEY);setRequestProperty("Authorization","Bearer "+token(c));if(prefer!=null)setRequestProperty("Prefer",prefer);if(body!=null)doOutput=true}
+  val conn=(URL(AiConfig.SUPABASE_URL+path).openConnection() as HttpURLConnection).apply{requestMethod=method;connectTimeout=15000;readTimeout=30000;doInput=true;setRequestProperty("Content-Type","application/json");setRequestProperty("apikey",AiConfig.SUPABASE_PUBLISHABLE_KEY);setRequestProperty("Authorization","Bearer "+requireAccessToken(c));if(prefer!=null)setRequestProperty("Prefer",prefer);if(body!=null)doOutput=true}
   try{if(body!=null)conn.outputStream.use{it.write(body.toString().toByteArray(Charsets.UTF_8))};val code=conn.responseCode;val raw=(if(code in 200..299)conn.inputStream else conn.errorStream)?.bufferedReader()?.use{it.readText()}.orEmpty();if(code !in 200..299)throw IllegalStateException("Profile sync failed ($code): "+JSONObject(raw.ifBlank{"{}"}).optString("message","Try again."));return raw}finally{conn.disconnect()}
  }
 }
