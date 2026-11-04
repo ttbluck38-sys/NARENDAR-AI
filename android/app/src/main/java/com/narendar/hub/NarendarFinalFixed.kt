@@ -147,7 +147,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  Column(Modifier.fillMaxSize().padding(16.dp)){
   AppText("Study Library",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
   AppText("Notes, tasks, flashcards, MCQ bank and focus tools — stored locally.",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=13.sp)
-  Row(Modifier.horizontalScroll(rememberScrollState())){listOf("Notes","Planner","MCQ Bank","Flashcards","Focus","Tools").forEachIndexed{index,label->FilterChip(tab==index,{tab=index},label={AppText(label)},modifier=Modifier.padding(end=6.dp) )}}
+  Row(Modifier.horizontalScroll(rememberScrollState())){listOf("Notes","Planner","Flashcards","Focus","Tools").forEachIndexed{index,label->FilterChip(tab==index,{tab=index},label={AppText(label)},modifier=Modifier.padding(end=6.dp) )}}
   Spacer(Modifier.height(10.dp))
   if(tab==0){
    OutlinedTextField(title,{title=it},label={AppText("Note title")},modifier=Modifier.fillMaxWidth())
@@ -161,54 +161,12 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
    Spacer(Modifier.height(10.dp))
    LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(tasks,key={it.id}){t->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Row(Modifier.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Checkbox(t.done,{v->saveTasks(tasks.map{if(it.id==t.id)it.copy(done=v)else it})});AppText(t.text,Modifier.weight(1f),fontWeight=FontWeight.Bold);AppText("✕",Modifier.clickable{saveTasks(tasks.filterNot{it.id==t.id})})}}}}
   }else if(tab==2){
-   QuestionBank(g,Modifier.weight(1f))
-  }else if(tab==3){
    if(notes.isEmpty())AppText("Create a note first, then it will appear here as a revision flashcard.",color=MaterialTheme.colorScheme.onSurfaceVariant)
    LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(notes.reversed(),key={it.id}){n->Card(Modifier.fillMaxWidth().clickable{revealed=if(n.id in revealed)revealed-n.id else revealed+n.id},shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(18.dp)){AppText(if(n.id in revealed)"ANSWER" else "QUESTION",fontSize=11.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(5.dp));AppText(n.title,fontWeight=FontWeight.Black,fontSize=17.sp);if(n.id in revealed){Spacer(Modifier.height(8.dp));AppText(n.body.ifBlank{"No answer saved yet."},color=MaterialTheme.colorScheme.onSurfaceVariant)}else{Spacer(Modifier.height(8.dp));AppText("Tap to reveal answer",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}}}
-  }else if(tab==4){
+  }else if(tab==3){
    FocusTimer()
   }else{
    QuickTools()
-  }
- }
-}
-
-@Composable private fun QuestionBank(selectedGrade:Int,modifier:Modifier=Modifier){
- val context=LocalContext.current
- val prefs=remember{context.getSharedPreferences("studypilot_bank",Context.MODE_PRIVATE)}
- var g by remember(selectedGrade){mutableIntStateOf(if(selectedGrade in 1..9)selectedGrade else 1)}
- var subject by remember{mutableStateOf("Mathematics")}
- var difficulty by remember{mutableStateOf("Easy")}
- var page by remember{mutableIntStateOf(0)}
- var query by remember{mutableStateOf("")}
- var savedOnly by remember{mutableStateOf(false)}
- var bookmarks by remember{mutableStateOf(prefs.getStringSet("bookmarks",emptySet())?.toSet()?:emptySet())}
- val all=remember(g,subject,difficulty){emptyList<M>()}
- val filtered=remember(all,query,savedOnly,bookmarks){all.filter{q->(query.isBlank()||q.q.contains(query,true)||q.opts.any{it.contains(query,true)}||q.exp.contains(query,true))&&(!savedOnly||q.id.toString() in bookmarks)}}
- val pageCount=maxOf(1,(filtered.size+24)/25)
- val questions=remember(filtered,page){filtered.drop(page*25).take(25)}
- Column(modifier.fillMaxSize()){
-  AppText("MCQ Question Bank",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
-  AppText("AI quiz generation is available in Quiz Arena. This local archive only contains previously saved items.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-  Spacer(Modifier.height(7.dp))
-  Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(5.dp)){(1..9).forEach{n->FilterChip(g==n,{g=n;page=0},label={AppText(if(n==9)"9+" else "$n")})}}
-  Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(5.dp)){subs.forEach{(name,_)->FilterChip(subject==name,{subject=name;page=0},label={AppText(name)})}}
-  Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){listOf("Easy","Medium","Hard").forEach{d->FilterChip(difficulty==d,{difficulty=d;page=0},label={AppText(d)})};FilterChip(savedOnly,{savedOnly=!savedOnly;page=0},label={AppText("★ Bookmarks")})}
-  OutlinedTextField(query,{query=it;page=0},label={AppText("Search questions, options or explanations")},singleLine=true,modifier=Modifier.fillMaxWidth())
-  AppText("Showing ${if(filtered.isEmpty())0 else page*25+1}–${minOf((page+1)*25,filtered.size)} of ${filtered.size} matches • Page ${page+1}/$pageCount",fontSize=11.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(vertical=5.dp))
-  LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){
-   items(questions,key={it.id}){q->var revealBankAnswer by remember(q.id){mutableStateOf(false)};Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(13.dp)){
-    Row(verticalAlignment=Alignment.CenterVertically){AppText("Class ${q.grade} • ${q.subject} • ${q.diff} • ${q.topic}",fontSize=10.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,modifier=Modifier.weight(1f));AppText(if(q.id.toString() in bookmarks)"★ Saved" else "☆ Save",Modifier.clickable{val next=bookmarks.toMutableSet();if(q.id.toString() in next)next.remove(q.id.toString())else next.add(q.id.toString());bookmarks=next;prefs.edit().putStringSet("bookmarks",next).apply()}.padding(4.dp),fontSize=12.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)}
-    Spacer(Modifier.height(5.dp));AppText(q.q,fontWeight=FontWeight.Bold)
-    q.opts.forEachIndexed{ix,opt->AppText("${'A'+ix}. $opt",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurface,modifier=Modifier.padding(top=3.dp))}
-    Spacer(Modifier.height(5.dp));OutlinedButton(onClick={revealBankAnswer=!revealBankAnswer}){AppText(if(revealBankAnswer)"Hide Correct Answer" else "Show Correct Answer")};if(revealBankAnswer)AppText("Correct answer: ${q.opts[q.ans]}",fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary,fontSize=13.sp)
-    if(revealBankAnswer)AppText(q.exp,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=3.dp))
-   }}}
-  }
-  Row(verticalAlignment=Alignment.CenterVertically,modifier=Modifier.padding(top=5.dp)){
-   OutlinedButton(onClick={page=(page-1).coerceAtLeast(0)},enabled=page>0){AppText("← Previous")}
-   Spacer(Modifier.weight(1f));AppText("${page+1}/$pageCount",fontWeight=FontWeight.Bold)
-   Spacer(Modifier.weight(1f));Button(onClick={page=(page+1).coerceAtMost(pageCount-1)},enabled=page<pageCount-1){AppText("Next →")}
   }
  }
 }
@@ -235,35 +193,87 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
  var left by remember{mutableStateOf("12")}
  var right by remember{mutableStateOf("4")}
  var operation by remember{mutableStateOf("+")}
+ var percentBase by remember{mutableStateOf("200")}
+ var percentRate by remember{mutableStateOf("15")}
+ var numerator by remember{mutableStateOf("6")}
+ var denominator by remember{mutableStateOf("8")}
+ var averageValues by remember{mutableStateOf("12, 15, 18, 20")}
+ var lengthValue by remember{mutableStateOf("100")}
+ var lengthFrom by remember{mutableStateOf("cm")}
+ var areaLength by remember{mutableStateOf("12")}
+ var areaWidth by remember{mutableStateOf("8")}
+ var numberForMath by remember{mutableStateOf("12")}
  val table=tableNumber.toIntOrNull()
- val result=remember(left,right,operation){val a=left.toDoubleOrNull();val b=right.toDoubleOrNull();if(a==null||b==null)"Enter valid numbers" else when(operation){"+"->(a+b).toString();"-"->(a-b).toString();"×"->(a*b).toString();else->if(b==0.0)"Cannot divide by zero" else (a/b).toString()}}
- Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())){
-  var numberForMath by remember{mutableStateOf("12")}
-   val mathN=numberForMath.toLongOrNull()
-   AppText("Quick Study Tools",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
-   Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
-    AppText("Number Explorer",fontWeight=FontWeight.Black)
-    OutlinedTextField(numberForMath,{numberForMath=it.filter{ch->ch.isDigit()||ch==45.toChar()}.take(12)},label={AppText("Enter an integer")},singleLine=true,modifier=Modifier.fillMaxWidth())
-    if(mathN!=null && mathN!=0L && kotlin.math.abs(mathN)<=1000000000L){AppText("Square: "+(mathN*mathN),fontWeight=FontWeight.SemiBold);AppText("Cube: "+(mathN*mathN*mathN),fontWeight=FontWeight.SemiBold);val factors=(1L..kotlin.math.abs(mathN).coerceAtMost(100000L)).filter{mathN%it==0L};AppText("Positive factors: "+factors.joinToString(", "),fontSize=12.sp);AppText("Prime: "+(kotlin.math.abs(mathN)>1 && (2L..kotlin.math.sqrt(kotlin.math.abs(mathN).toDouble()).toLong()).none{mathN%it==0L}),fontSize=12.sp)} else if(mathN==0L) AppText("Zero has no finite factor list.",fontSize=12.sp)
-   }}
-   Spacer(Modifier.height(10.dp))
-  AppText("Offline calculator, multiplication tables and formula cards.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+ val a=left.toDoubleOrNull();val b=right.toDoubleOrNull()
+ val result=if(a==null||b==null)"Enter valid numbers" else when(operation){"+"->a+b;"-"->a-b;"×"->a*b;else->if(b==0.0)null else a/b}
+ val base=percentBase.toDoubleOrNull();val rate=percentRate.toDoubleOrNull()
+ val percent=if(base!=null&&rate!=null)base*rate/100.0 else null
+ val n=numerator.toLongOrNull();val d=denominator.toLongOrNull()
+ fun gcd(x:Long,y:Long):Long{var aa=kotlin.math.abs(x);var bb=kotlin.math.abs(y);while(bb!=0L){val t=aa%bb;aa=bb;bb=t};return aa.coerceAtLeast(1)}
+ val fraction=if(n!=null&&d!=null&&d!=0L){val k=gcd(n,d);"${n/k}/${d/k}"}else "Enter a valid fraction"
+ val nums=averageValues.split(",").mapNotNull{it.trim().toDoubleOrNull()}
+ val average=if(nums.isNotEmpty())nums.average() else null
+ val length=lengthValue.toDoubleOrNull()
+ val converted=if(length!=null)when(lengthFrom){"mm"->length/10.0;"cm"->length;"m"->length*100.0;else->length*100000.0} else null
+ val l=areaLength.toDoubleOrNull();val w=areaWidth.toDoubleOrNull()
+ val mathN=numberForMath.toLongOrNull()
+ Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom=12.dp)){
+  AppText("Study Tools",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Black)
+  AppText("Five extra calculators for everyday school maths, plus your original quick tools.",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+  Spacer(Modifier.height(10.dp))
+  Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
+   AppText("1. Percentage Calculator",fontWeight=FontWeight.Black)
+   OutlinedTextField(percentBase,{percentBase=it},label={AppText("Number")},singleLine=true,modifier=Modifier.fillMaxWidth())
+   OutlinedTextField(percentRate,{percentRate=it},label={AppText("Percentage (%)")},singleLine=true,modifier=Modifier.fillMaxWidth())
+   AppText(if(percent==null)"Enter valid values" else "$rate% of $base = ${"%.4f".format(java.util.Locale.US,percent).trimEnd('0').trimEnd('.')}",fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)
+  }}
+  Spacer(Modifier.height(8.dp))
+  Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
+   AppText("2. Fraction Simplifier",fontWeight=FontWeight.Black)
+   Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){OutlinedTextField(numerator,{numerator=it},label={AppText("Numerator")},modifier=Modifier.weight(1f),singleLine=true);OutlinedTextField(denominator,{denominator=it},label={AppText("Denominator")},modifier=Modifier.weight(1f),singleLine=true)}
+   AppText(if(d==0L)"Denominator cannot be zero" else "Simplified fraction: $fraction",fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)
+  }}
+  Spacer(Modifier.height(8.dp))
+  Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
+   AppText("3. Average Calculator",fontWeight=FontWeight.Black)
+   OutlinedTextField(averageValues,{averageValues=it},label={AppText("Numbers separated by commas")},modifier=Modifier.fillMaxWidth(),minLines=2)
+   AppText(if(average==null)"Enter values like 10, 20, 30" else "Average: ${"%.4f".format(java.util.Locale.US,average).trimEnd('0').trimEnd('.')}",fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)
+  }}
+  Spacer(Modifier.height(8.dp))
+  Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
+   AppText("4. Length Converter",fontWeight=FontWeight.Black)
+   OutlinedTextField(lengthValue,{lengthValue=it},label={AppText("Value")},singleLine=true,modifier=Modifier.fillMaxWidth())
+   Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){listOf("mm","cm","m","km").forEach{FilterChip(lengthFrom==it,{lengthFrom=it},label={AppText(it)})}}
+   AppText(if(converted==null)"Enter a valid length" else "Centimetres: ${"%.4f".format(java.util.Locale.US,converted).trimEnd('0').trimEnd('.')}",fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)
+  }}
+  Spacer(Modifier.height(8.dp))
+  Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
+   AppText("5. Rectangle Area & Perimeter",fontWeight=FontWeight.Black)
+   Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){OutlinedTextField(areaLength,{areaLength=it},label={AppText("Length")},modifier=Modifier.weight(1f),singleLine=true);OutlinedTextField(areaWidth,{areaWidth=it},label={AppText("Width")},modifier=Modifier.weight(1f),singleLine=true)}
+   if(l!=null&&w!=null&&l>=0&&w>=0){AppText("Area: ${l*w}",fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary);AppText("Perimeter: ${2*(l+w)}",fontWeight=FontWeight.Bold)}else AppText("Enter non-negative dimensions")
+  }}
   Spacer(Modifier.height(10.dp))
   Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
    AppText("Multiplication Table",fontWeight=FontWeight.Black)
-   OutlinedTextField(tableNumber,{tableNumber=it.filter{ch->ch.isDigit()}.take(8)},label={AppText("Enter any whole number")},singleLine=true,modifier=Modifier.fillMaxWidth())
-   if(table!=null){(1..10).forEach{n->AppText("$table × $n = ${table*n}",fontWeight=FontWeight.Medium,modifier=Modifier.padding(vertical=2.dp))}}
+   OutlinedTextField(tableNumber,{tableNumber=it.filter{ch->ch.isDigit()}.take(8)},label={AppText("Enter a whole number")},singleLine=true,modifier=Modifier.fillMaxWidth())
+   if(table!=null)(1..10).forEach{num->AppText("$table × $num = ${table*num}")}
   }}
-  Spacer(Modifier.height(10.dp))
+  Spacer(Modifier.height(8.dp))
   Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
    AppText("Basic Calculator",fontWeight=FontWeight.Black)
    Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){OutlinedTextField(left,{left=it},label={AppText("Number A")},modifier=Modifier.weight(1f),singleLine=true);OutlinedTextField(right,{right=it},label={AppText("Number B")},modifier=Modifier.weight(1f),singleLine=true)}
    Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf("+","-","×","÷").forEach{op->FilterChip(operation==op,{operation=op},label={AppText(op)})}}
-   AppText("Result: $result",fontSize=20.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
+   AppText("Result: ${result?.toString()?:if(a!=null&&b==0.0)"Cannot divide by zero" else "Invalid input"}",fontSize=20.sp,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
   }}
-  Spacer(Modifier.height(10.dp))
+  Spacer(Modifier.height(8.dp))
+  Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(14.dp)){
+   AppText("Number Explorer",fontWeight=FontWeight.Black)
+   OutlinedTextField(numberForMath,{numberForMath=it.filter{ch->ch.isDigit()||ch=='-'}.take(12)},label={AppText("Enter an integer")},singleLine=true,modifier=Modifier.fillMaxWidth())
+   if(mathN!=null&&mathN!=0L&&kotlin.math.abs(mathN)<=1000000000L){AppText("Square: ${mathN*mathN}");AppText("Cube: ${mathN*mathN*mathN}")}else if(mathN==0L)AppText("Zero has no finite factor list.")
+  }}
+  Spacer(Modifier.height(8.dp))
   AppText("Formula Cards",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Black)
-  listOf("Rectangle area" to "A = length × width","Rectangle perimeter" to "P = 2 × (length + width)","Speed" to "speed = distance ÷ time","Density" to "density = mass ÷ volume","Ohm’s law" to "voltage = current × resistance","Circle circumference" to "C = 2 × π × radius","Average" to "average = total ÷ number of values").forEach{(name,formula)->Card(Modifier.fillMaxWidth().padding(vertical=3.dp),shape=RoundedCornerShape(15.dp)){Column(Modifier.padding(12.dp)){AppText(name,fontWeight=FontWeight.Bold);AppText(formula,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}
+  listOf("Speed" to "speed = distance ÷ time","Density" to "density = mass ÷ volume","Ohm’s law" to "voltage = current × resistance","Circle circumference" to "C = 2 × π × radius","Average" to "average = total ÷ number of values").forEach{(name,formula)->Card(Modifier.fillMaxWidth().padding(vertical=3.dp),shape=RoundedCornerShape(15.dp)){Column(Modifier.padding(12.dp)){AppText(name,fontWeight=FontWeight.Bold);AppText(formula,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}
  }
 }
 
