@@ -53,7 +53,7 @@ private val palette=listOf(Color(0xFF315EFB),Color(0xFF7C4DFF),Color(0xFF00A884)
     runCatching { StudentAuth.logout(context) }
     false
    }
-   if (!valid) { page = "auth" }
+   if (!valid) { page = "auth" } else if (page == "auth") { page = if (grade < 0) "pick" else "home" }
    sessionReady = true
   }
  LaunchedEffect(toast){if(toast.isNotEmpty()){delay(1500);toast=""}}
