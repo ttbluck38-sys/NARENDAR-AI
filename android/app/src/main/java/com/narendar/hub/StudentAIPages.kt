@@ -11,6 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -25,6 +27,12 @@ import java.net.URL
  val context=LocalContext.current;val scope=rememberCoroutineScope()
  var signup by remember{mutableStateOf(false)};var email by remember{mutableStateOf("")};var password by remember{mutableStateOf("")};var name by remember{mutableStateOf("")};var busy by remember{mutableStateOf(false)};var error by remember{mutableStateOf("")}
  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
+  Surface(shape=RoundedCornerShape(28.dp),color=MaterialTheme.colorScheme.primaryContainer,modifier=Modifier.size(112.dp)){
+   Box(contentAlignment=Alignment.Center){
+    Image(painter=painterResource(R.drawable.studypilot_logo),contentDescription="StudyPilot AI logo",modifier=Modifier.fillMaxSize().padding(8.dp))
+   }
+  }
+  Spacer(Modifier.height(12.dp))
   Text("StudyPilot AI",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black,color=MaterialTheme.colorScheme.primary)
   Text("Your learning space. Your progress. Your AI.",style=MaterialTheme.typography.bodyMedium)
   Spacer(Modifier.height(24.dp));Text(if(signup)"Create your student account" else "Welcome back",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
