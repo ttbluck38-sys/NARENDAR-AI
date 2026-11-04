@@ -4,8 +4,8 @@
     <application
         android:theme="@style/AppTheme"
         android:label="StudyPilot AI"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@drawable/studypilot_logo"
+        android:roundIcon="@drawable/studypilot_logo"
         android:allowBackup="true"
         android:supportsRtl="true">
         <activity android:name=".MainActivity" android:exported="true">
