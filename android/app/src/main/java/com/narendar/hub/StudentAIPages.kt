@@ -33,7 +33,7 @@ import java.net.URL
   OutlinedTextField(password,{password=it},label={Text("Password")},singleLine=true,visualTransformation=PasswordVisualTransformation(),modifier=Modifier.fillMaxWidth())
   if(error.isNotBlank())Text(error,color=MaterialTheme.colorScheme.error)
   Spacer(Modifier.height(12.dp))
-  Button(enabled=!busy&&email.contains("@")&&password.length>=6&&(!signup||name.isNotBlank()),onClick={busy=true;error="";scope.launch{try{withContext(Dispatchers.IO){if(signup)StudentAuth.signUp(context,email,password,name)else StudentAuth.signIn(context,email,password)};onSignedIn()}catch(e:Exception){error=e.message?: "Could not sign in."}finally{busy=false}}},modifier=Modifier.fillMaxWidth()){
+  Button(enabled=!busy&&email.contains("@")&&password.length>=6&&(!signup||name.isNotBlank()),onClick={busy=true;error="";scope.launch{try{withContext(Dispatchers.IO){if(signup)StudentAuth.signUp(context,email,password,name)else StudentAuth.signIn(context,email,password)};onSignedIn()}catch(e:Throwable){error=e.message?: "Sign-in could not complete. Please retry."}finally{busy=false}}},modifier=Modifier.fillMaxWidth()){
    if(busy)CircularProgressIndicator(Modifier.size(18.dp),strokeWidth=2.dp) else Text(if(signup)"CREATE ACCOUNT" else "SIGN IN")
   }
   TextButton(onClick={signup=!signup;error=""}){Text(if(signup)"Already have an account? Sign in" else "New student? Create account")}
