@@ -268,7 +268,13 @@ internal object StudentAuth {
 
         if (isCorrect != null) body.put("is_correct", isCorrect)
 
-        request(context, "/rest/v1/learning_events", "POST", body, "return=minimal")
+        // Learning analytics are best-effort. A network/Auth/RLS failure must
+        // never crash a quiz, explanation, or other student-facing page.
+        try {
+            request(context, "/rest/v1/learning_events", "POST", body, "return=minimal")
+        } catch (_: Exception) {
+            // Keep the learning flow usable when analytics are unavailable.
+        }
     }
 
     fun request(
