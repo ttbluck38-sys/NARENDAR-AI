@@ -60,9 +60,23 @@ internal fun AiQuestionTools(
     var ttsReady by remember { mutableStateOf(false) }
 
     DisposableEffect(context) {
-        val engine = TextToSpeech(context) { status -> ttsReady = status == TextToSpeech.SUCCESS }
-        tts = engine
-        onDispose { engine.stop(); engine.shutdown(); tts = null }
+        var engine: TextToSpeech? = null
+        try {
+            engine = TextToSpeech(context) { status ->
+                ttsReady = status == TextToSpeech.SUCCESS
+            }
+            tts = engine
+        } catch (_: Exception) {
+            tts = null
+            ttsReady = false
+            error = "Speech service is unavailable on this device. Other study tools remain available."
+        }
+        onDispose {
+            try { engine?.stop() } catch (_: Exception) { }
+            try { engine?.shutdown() } catch (_: Exception) { }
+            tts = null
+            ttsReady = false
+        }
     }
 
     Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
